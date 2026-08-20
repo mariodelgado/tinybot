@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
   TINYFISH_APPS,
+  type TinyFishUsageId,
   tinyFishAppBySlug,
   tinyFishAppPath,
-  type TinyFishUsageId,
 } from "../src/lib/tinyfish/apps";
 
 const expected = [
@@ -12,35 +12,35 @@ const expected = [
     slug: "tinytail",
     title: "TinyTail",
     oneLiner: "As-of Explorer — long-tail facts, read-only",
-    defaultUrl: "http://127.0.0.1:8765/ui",
+    defaultUrl: "http://127.0.0.1:18765/ui",
   },
   {
     usageId: "js-02" as const,
     slug: "tinypulse",
     title: "TinyPulse",
     oneLiner: "Event Feed — NE Asia LNG, graph is read-only",
-    defaultUrl: "http://127.0.0.1:8080/ui",
+    defaultUrl: "http://127.0.0.1:18082/ui",
   },
   {
     usageId: "js-03" as const,
     slug: "tinyweb",
     title: "TinyWeb",
     oneLiner: "Governed Fetch — deny-list still wins",
-    defaultUrl: "http://127.0.0.1:8765/ui",
+    defaultUrl: "http://127.0.0.1:18766/ui",
   },
   {
     usageId: "tf-01" as const,
     slug: "tinywatch",
     title: "TinyWatch",
     oneLiner: "Watch / When / Do — T1 required",
-    defaultUrl: "http://127.0.0.1:8080/",
+    defaultUrl: "http://127.0.0.1:18081/",
   },
   {
     usageId: "tf-02" as const,
     slug: "tinykit",
     title: "TinyKit",
     oneLiner: "Recipe Gallery — failed evals cannot instantiate",
-    defaultUrl: "http://127.0.0.1:8080/",
+    defaultUrl: "http://127.0.0.1:18083/",
   },
   {
     usageId: "tf-03" as const,

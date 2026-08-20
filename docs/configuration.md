@@ -88,12 +88,12 @@ Two things are worth knowing before pointing a deployment at any gateway. Not ev
 | `BETTER_AUTH_URL`            | Public API server base URL. Required with Google OAuth.                                |
 | `TRUSTED_ORIGINS`            | Comma-separated app origins accepted by the API.                                       |
 | `INITIAL_ADMIN_EMAILS`       | Comma-separated users seeded as administrators.                                        |
-| `TINYFISH_MCP_URL`           | TinyPipe MCP URL. When set, TinyFish is the sign-in path. Default locally: `http://127.0.0.1:3712/mcp`. |
+| `TINYFISH_MCP_URL`           | TinyPipe MCP URL. When set, TinyFish is the sign-in path. `start.sh` writes `http://127.0.0.1:3712/mcp`. |
 | `TINYFISH_ISSUER`            | Expected CIMD `iss`. Fixture: `https://issuer.fixtures.tinyfish.test`.                 |
 
 Google OAuth client id and secret must be configured together. If Google OAuth is configured, `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` are also required.
 
-TinyFish sign-in verifies a Phase 1 `tfk.*` keyring token against TinyPipe. It does not fetch CIMD or JWKS, does not mint a verifier, and does not call `record_usage`. `tfk.alice` creates profile `tfu_alice`; a second login upserts that row. `tfk.exhausted` creates `tfu_exhausted` (valid login; exhausted is a credit gate). Non-fixture tokens are 401. `OPENBOT_DEV_NO_AUTH` remains an escape hatch only when TinyPipe is not configured.
+TinyFish sign-in verifies a Phase 1 `tfk.*` keyring token against TinyPipe. It does not fetch CIMD or JWKS, does not mint a verifier, and does not call `record_usage`. `tfk.alice` creates profile `tfu_alice`; a second login upserts that row. `tfk.exhausted` creates `tfu_exhausted` (valid login; exhausted is a credit gate). Non-fixture tokens are 401. TinyPipe must be healthy before `/sign` works. `OPENBOT_DEV_NO_AUTH` remains an escape hatch only when TinyPipe is not configured.
 
 ## Computer and supervisor
 
@@ -159,6 +159,14 @@ When optional SPIRE services are used:
 | `agent-langgraph` | 4201                       | `LANGGRAPH_PORT`  |
 | `supervisor`      | 4500 host / 4300 container | `SUPERVISOR_PORT` |
 | PostgreSQL        | 5432                       | `POSTGRES_PORT`   |
+| TinyPipe          | 3712                       | `TINYPIPE_HOST_PORT` |
+| TinyTail          | 18765                      | `TINYTAIL_HOST_PORT` |
+| TinyPulse         | 18082                      | `TINYPULSE_HOST_PORT` |
+| TinyWeb           | 18766                      | `TINYWEB_HOST_PORT` |
+| TinyWatch         | 18081                      | `TINYWATCH_HOST_PORT` |
+| TinyKit           | 18083                      | `TINYKIT_HOST_PORT` |
+
+TinyFish product ports are published by `docker-compose.tinyfish.yml` (or a wrap of each product's own compose). Native container ports stay 3712 / 8765 / 8080; only the host side is remapped.
 
 Set these in `.env` or in the environment. `docker-compose.yml` publishes on them and
 `scripts/start.sh` reads the same names to decide where to look, so one setting moves a service and

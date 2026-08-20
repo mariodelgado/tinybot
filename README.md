@@ -27,7 +27,7 @@ your own machine.
 
 > **Alpha, and under active development.** TinyBot is early. Expect rough edges and bugs, and expect things to move. Issues and pull requests are welcome.
 
-> **Runs on your machine.** Everything below is written for a laptop. Out of the box TinyBot runs with `OPENBOT_DEV_NO_AUTH`, which skips signing in and admits every request as one administrator. [Google sign-in](#sign-in-with-google) can be wired up instead.
+> **Runs on your machine.** Everything below is written for a laptop. After `bash scripts/start.sh`, TinyPipe is up and TinyFish sign-in is required (`tfk.alice` at `/sign`). `OPENBOT_DEV_NO_AUTH` remains an escape hatch only when TinyPipe is not configured. [Google sign-in](#sign-in-with-google) can be wired up instead.
 
 ## What it is
 
@@ -85,35 +85,31 @@ A Bot is any endpoint speaking [AG-UI](https://github.com/ag-ui-protocol/ag-ui),
    openssl rand -base64 32
    ```
 
-4. Install and run:
+4. Install and run the full stack (TinyBot + the six TinyFish products):
 
    ```sh
    bun install
    bash scripts/start.sh
    ```
 
-5. Open <http://localhost:3010>.
+5. Open <http://localhost:3010/sign>, paste `tfk.alice`, then open <http://localhost:3010/>.
 
-`scripts/start.sh` starts Docker services, applies migrations, starts the API server on port 3001, starts the app on port 3010, and checks that the services answer their own health routes before printing next steps.
+`scripts/start.sh` starts TinyPipe first (auth on `http://127.0.0.1:3712/mcp`), then the other five products on unique host ports, then TinyBot Docker services, migrations, the API server on port 3001, and the app on port 3010. TinyPipe must be healthy before sign-in and the start-page cards work.
 
-The start page at <http://localhost:3010/> leads with six TinyFish product cards. Click a card to open that product inside TinyBot (an in-app iframe at `/apps/<product>`), not a new browser window.
+The start page at <http://localhost:3010/> leads with six TinyFish product cards. Click a card to open that product's live UI inside TinyBot (an in-app iframe at `/apps/<product>`), not a new browser window.
 
 ## Sign in with TinyFish
 
-TinyPipe (`tf-03`) is the auth + metering surface. TinyBot verifies a Phase 1 fixture token against it, then upserts a user profile keyed by `tinyfish_user_id`. After `bash scripts/start.sh`:
+TinyPipe (`tf-03`) is the auth + metering surface. TinyBot verifies a Phase 1 fixture token against it, then upserts a user profile keyed by `tinyfish_user_id`. `bash scripts/start.sh` starts TinyPipe first and writes these localhost values into `.env` when they are missing:
 
-1. Uncomment in `.env` (localhost only — do not invent a production host):
+```sh
+TINYFISH_MCP_URL=http://127.0.0.1:3712/mcp
+TINYFISH_ISSUER=https://issuer.fixtures.tinyfish.test
+```
 
-   ```sh
-   TINYFISH_MCP_URL=http://127.0.0.1:3712/mcp
-   TINYFISH_ISSUER=https://issuer.fixtures.tinyfish.test
-   ```
+When `TINYFISH_MCP_URL` is set, this is the real sign-in. TinyPipe must be healthy before `/sign` works. `OPENBOT_DEV_NO_AUTH` stays an escape hatch only if TinyPipe is not configured.
 
-   When `TINYFISH_MCP_URL` is set, this is the real sign-in. `OPENBOT_DEV_NO_AUTH` stays an escape hatch only if TinyPipe is not running.
-
-2. Restart the app/server so generated config picks up the TinyFish provider.
-
-3. Open <http://localhost:3010/sign> and paste a fixture token:
+Open <http://localhost:3010/sign> and paste a fixture token:
 
    - `tfk.alice` → profile `tfu_alice` (`iss` = `https://issuer.fixtures.tinyfish.test`, `client_id` = `https://cimd.fixtures.tinyfish.test/client.json`)
    - `tfk.exhausted` → profile `tfu_exhausted` (valid login; 0 credits is a TinyPipe credit gate, not an auth gate)
@@ -123,18 +119,20 @@ A second `tfk.alice` reuses `tfu_alice`. The session cookie binds to that profil
 
 ## TinyFish products
 
-Catalog defaults live in `app/src/lib/tinyfish/apps.ts` and stay on localhost. Several products share `:8080` / `:8765`; change the URL in that catalog (or `VITE_TINYFISH_<USAGE>_URL`) rather than rewriting the product repos. Cards may show **Unreachable** if the process is down; they still open the shell route.
+Catalog defaults live in `app/src/lib/tinyfish/stack.ts` (host ports TinyBot publishes) and stay on localhost. Product repos keep their native binds; TinyBot remaps the host side in `docker-compose.tinyfish.yml`. Override a card URL with `VITE_TINYFISH_<USAGE>_URL` if needed. Cards may show **Unreachable** if that service is down; they still open the shell route.
 
-| Product   | One-line                                           | Start-page route        | Default URL                    | Usage id |
-| --------- | -------------------------------------------------- | ----------------------- | ------------------------------ | -------- |
-| TinyTail  | As-of Explorer — long-tail facts, read-only        | `/apps/tinytail`        | `http://127.0.0.1:8765/ui`     | `js-01`  |
-| TinyPulse | Event Feed — NE Asia LNG, graph is read-only       | `/apps/tinypulse`       | `http://127.0.0.1:8080/ui`     | `js-02`  |
-| TinyWeb   | Governed Fetch — deny-list still wins              | `/apps/tinyweb`         | `http://127.0.0.1:8765/ui`     | `js-03`  |
-| TinyWatch | Watch / When / Do — T1 required                    | `/apps/tinywatch`       | `http://127.0.0.1:8080/`       | `tf-01`  |
-| TinyKit   | Recipe Gallery — failed evals cannot instantiate   | `/apps/tinykit`         | `http://127.0.0.1:8080/`       | `tf-02`  |
-| TinyPipe  | Auth + usage console — fixture CIMD, credit pool   | `/apps/tinypipe`        | `http://127.0.0.1:3712/ui`     | `tf-03`  |
+| Product   | One-line                                           | Start-page route        | Live UI after `start.sh`         | Usage id |
+| --------- | -------------------------------------------------- | ----------------------- | -------------------------------- | -------- |
+| TinyTail  | As-of Explorer — long-tail facts, read-only        | `/apps/tinytail`        | `http://127.0.0.1:18765/ui`      | `js-01`  |
+| TinyPulse | Event Feed — NE Asia LNG, graph is read-only       | `/apps/tinypulse`       | `http://127.0.0.1:18082/ui`      | `js-02`  |
+| TinyWeb   | Governed Fetch — deny-list still wins              | `/apps/tinyweb`         | `http://127.0.0.1:18766/ui`      | `js-03`  |
+| TinyWatch | Watch / When / Do — T1 required                    | `/apps/tinywatch`       | `http://127.0.0.1:18081/`        | `tf-01`  |
+| TinyKit   | Recipe Gallery — failed evals cannot instantiate   | `/apps/tinykit`         | `http://127.0.0.1:18083/`        | `tf-02`  |
+| TinyPipe  | Auth + usage console — fixture CIMD, credit pool   | `/apps/tinypipe`        | `http://127.0.0.1:3712/ui`       | `tf-03`  |
 
-TinyBot embeds those UIs. It does not clone the product repos and does not weaken their gates (TinyTail stays read-only, TinyPulse cannot mint facilities, TinyWatch cannot bypass T1, TinyKit failed evals cannot instantiate, TinyWeb deny-list wins, TinyPipe fixture tokens are `tfk.*` not JWTs).
+`bash scripts/start.sh` wraps each product's own compose when a sibling checkout (or a gitignored `.tinyfish-siblings/` clone) is available, remapping only host ports. If those checkouts are missing, it falls back to git-context builds in `docker-compose.tinyfish.yml`. Product source is not vendored into TinyBot. Gates stay in the product repos (TinyTail stays read-only, TinyPulse cannot mint facilities, TinyWatch cannot bypass T1, TinyKit failed evals cannot instantiate, TinyWeb deny-list wins, TinyPipe fixture tokens are `tfk.*` not JWTs).
+
+Set `OPENBOT_SKIP_TINYFISH_PRODUCTS=1` to start TinyBot without the six.
 
 ## Try it
 
@@ -241,6 +239,12 @@ Full reference: [docs/configuration.md](docs/configuration.md).
 | `agent-langgraph`        | 4201                       | LangGraph AG-UI Bot.                                                                             |
 | `supervisor`             | 4500 host / 4300 container | Creates and manages one computer per Bot.                                                        |
 | PostgreSQL with pgvector | 5432                       | Product data, policy, audit, credentials, grants, channels, knowledge, and component metadata.   |
+| TinyPipe                 | 3712                       | Auth + usage console and MCP (`/mcp`). Must be up before TinyFish sign-in.                       |
+| TinyTail                 | 18765                      | Long-tail As-of Explorer UI.                                                                     |
+| TinyPulse                | 18082                      | Physical-events feed UI.                                                                         |
+| TinyWeb                  | 18766                      | Governed fetch UI.                                                                               |
+| TinyWatch                | 18081                      | Trigger-rules UI.                                                                                |
+| TinyKit                  | 18083                      | Recipe gallery UI.                                                                               |
 | CopilotKit Intelligence  | external                   | Durable threads and memory.                                                                      |
 
 The server gateway is the product/API path for Bot browser and file tool calls.

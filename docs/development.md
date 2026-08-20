@@ -29,7 +29,7 @@ bash scripts/start.sh
 
 ## Running services
 
-Use `bash scripts/start.sh` for the full local stack. It starts Docker services, applies migrations, starts the API server and app, and verifies health routes.
+Use `bash scripts/start.sh` for the full local stack. It starts TinyPipe first, then the other five TinyFish products on unique host ports, then TinyBot Docker services, migrations, the API server and app, and verifies health routes. TinyPipe must be healthy before TinyFish sign-in and the start-page cards work.
 
 Use `bun run dev` only when you want the app and API server without starting the Docker Bots and computers.
 
@@ -42,6 +42,12 @@ Use `bun run dev` only when you want the app and API server without starting the
 | `agent-langgraph` | 4201                       |
 | `supervisor`      | 4500 host / 4300 container |
 | PostgreSQL        | 5432                       |
+| TinyPipe          | 3712                       |
+| TinyTail          | 18765                      |
+| TinyPulse         | 18082                      |
+| TinyWeb           | 18766                      |
+| TinyWatch         | 18081                      |
+| TinyKit           | 18083                      |
 
 `start.sh` leaves existing matching services alone and reports when a port is held by another process.
 

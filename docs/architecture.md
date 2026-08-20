@@ -21,8 +21,10 @@ Regenerate it with `bun run diagram` after changing anything it shows.
 | `supervisor`             | 4500 host / 4300 container | Creates, stops, resets, and lists per-Bot computer containers.                                                                              |
 | PostgreSQL with pgvector | 5432                       | Product data, audit rows, credentials, policy, grants, channels, components, connector state, and knowledge records.                        |
 | CopilotKit Intelligence  | external                   | Durable threads, memory, and realtime gateway.                                                                                              |
+| TinyPipe                 | 3712                       | TinyFish auth + metering. `/ui` is the console; `/mcp` is the fixture-desk socket TinyBot sign-in uses.                                     |
+| TinyTail / TinyPulse / TinyWeb / TinyWatch / TinyKit | 18765 / 18082 / 18766 / 18081 / 18083 | Sibling product UIs, published on unique TinyBot host ports.                                                          |
 
-`scripts/start.sh` starts PostgreSQL, `agent-computer`, `agent-bot`, `agent-langgraph`, and the supervisor through Docker Compose, then starts `server` and `app` on the host.
+`scripts/start.sh` starts TinyPipe first, then the other five TinyFish products (`docker-compose.tinyfish.yml` or a wrap of each product's compose), then PostgreSQL, `agent-computer`, `agent-bot`, `agent-langgraph`, and the supervisor through Docker Compose, then starts `server` and `app` on the host.
 
 The compose file also defines optional SPIRE services. `start.sh` does not start them.
 

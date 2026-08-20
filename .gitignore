@@ -12,6 +12,7 @@ node_modules/
 app/src/lib/generated/application-config.ts
 .logs/
 .demo-logs/
+.tinyfish-siblings/
 **/.impeccable
 .wave-state.md
 

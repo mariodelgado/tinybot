@@ -1,18 +1,18 @@
 /**
  * TinyFish product catalog shown on the TinyBot start page.
  *
- * URLs are localhost defaults. Several products share :8080 / :8765 today; do not rewrite those
- * repos. Override a URL here, or with `VITE_TINYFISH_<USAGE>_URL` (for example
- * `VITE_TINYFISH_JS_01_URL`), when the process is bound to a different port.
+ * Defaults are the remapped TinyBot host ports. Override a URL with
+ * `VITE_TINYFISH_<USAGE>_URL` (for example `VITE_TINYFISH_JS_01_URL`) when a
+ * process is bound somewhere else. Cards show Unreachable if that process is down.
  */
 
-export type TinyFishUsageId =
-  | "js-01"
-  | "js-02"
-  | "js-03"
-  | "tf-01"
-  | "tf-02"
-  | "tf-03";
+import {
+  TINYFISH_PRODUCTS,
+  type TinyFishUsageId,
+  tinyFishProductUrl,
+} from "./stack";
+
+export type { TinyFishUsageId };
 
 export type TinyFishApp = {
   usageId: TinyFishUsageId;
@@ -23,56 +23,16 @@ export type TinyFishApp = {
   repo: string;
 };
 
-export const TINYFISH_APPS: readonly TinyFishApp[] = [
-  {
-    usageId: "js-01",
-    slug: "tinytail",
-    title: "TinyTail",
-    oneLiner: "As-of Explorer — long-tail facts, read-only",
-    defaultUrl: "http://127.0.0.1:8765/ui",
-    repo: "mariodelgado/js-01-long-tail-dataset",
-  },
-  {
-    usageId: "js-02",
-    slug: "tinypulse",
-    title: "TinyPulse",
-    oneLiner: "Event Feed — NE Asia LNG, graph is read-only",
-    defaultUrl: "http://127.0.0.1:8080/ui",
-    repo: "mariodelgado/js-02-physical-events",
-  },
-  {
-    usageId: "js-03",
-    slug: "tinyweb",
-    title: "TinyWeb",
-    oneLiner: "Governed Fetch — deny-list still wins",
-    defaultUrl: "http://127.0.0.1:8765/ui",
-    repo: "mariodelgado/js-03-governed-web",
-  },
-  {
-    usageId: "tf-01",
-    slug: "tinywatch",
-    title: "TinyWatch",
-    oneLiner: "Watch / When / Do — T1 required",
-    defaultUrl: "http://127.0.0.1:8080/",
-    repo: "mariodelgado/tf-01-trigger-rules",
-  },
-  {
-    usageId: "tf-02",
-    slug: "tinykit",
-    title: "TinyKit",
-    oneLiner: "Recipe Gallery — failed evals cannot instantiate",
-    defaultUrl: "http://127.0.0.1:8080/",
-    repo: "mariodelgado/tf-02-recipe-gallery",
-  },
-  {
-    usageId: "tf-03",
-    slug: "tinypipe",
-    title: "TinyPipe",
-    oneLiner: "Auth + usage console — fixture CIMD, credit pool",
-    defaultUrl: "http://127.0.0.1:3712/ui",
-    repo: "mariodelgado/tf-03-mcp-distribution",
-  },
-];
+export const TINYFISH_APPS: readonly TinyFishApp[] = TINYFISH_PRODUCTS.map(
+  (product) => ({
+    usageId: product.usageId,
+    slug: product.slug,
+    title: product.title,
+    oneLiner: product.oneLiner,
+    defaultUrl: tinyFishProductUrl(product),
+    repo: product.repo,
+  }),
+);
 
 const ENV_URL_KEYS: Record<TinyFishUsageId, string> = {
   "js-01": "VITE_TINYFISH_JS_01_URL",
