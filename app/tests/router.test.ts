@@ -10,3 +10,9 @@ test("provides the protected credential administration route", () => {
     "/admin/credentials",
   );
 });
+
+test("provides the TinyFish product embed route", () => {
+  expect(router.routesByPath["/apps/$product"]?.fullPath).toBe(
+    "/apps/$product",
+  );
+});

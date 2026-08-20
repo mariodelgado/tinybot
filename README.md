@@ -1,10 +1,10 @@
 <div align="center">
 
-# OpenBot
+# TinyBot
 
-**AI coworkers you can hand real work to, and actually trust with the access.** Each gets a computer of its own: a real browser with its own logins, its own files, and only the tools you grant. Every action decided before it happens and recorded after.
+**The TinyFish desktop shell.** TinyBot is based on [OpenBot](https://github.com/CopilotKit/openbot) by CopilotKit — AG-UI coworkers, a policy gateway, and governed computers — and keeps that architecture, the MIT license, and the CopilotKit attribution.
 
-[**copilotkit.ai/openbot**](https://copilotkit.ai/openbot) · [**Quick start**](#quick-start) · [**Features**](#features) · [**Bring your own agent**](#bring-your-own-agent) · [**Architecture**](#architecture) · [**Docs**](docs/README.md)
+[**copilotkit.ai/openbot**](https://copilotkit.ai/openbot) · [**Quick start**](#quick-start) · [**TinyFish products**](#tinyfish-products) · [**Features**](#features) · [**Bring your own agent**](#bring-your-own-agent) · [**Architecture**](#architecture) · [**Docs**](docs/README.md)
 
 [![CI](https://github.com/CopilotKit/openbot/actions/workflows/ci.yml/badge.svg)](https://github.com/CopilotKit/openbot/actions/workflows/ci.yml)
 [![security](https://github.com/CopilotKit/openbot/actions/workflows/security_zizmor.yml/badge.svg)](https://github.com/CopilotKit/openbot/actions/workflows/security_zizmor.yml)
@@ -25,13 +25,13 @@ your own machine.
 
 </div>
 
-> **Alpha, and under active development.** OpenBot is early. Expect rough edges and bugs, and expect things to move. Issues and pull requests are welcome.
+> **Alpha, and under active development.** TinyBot is early. Expect rough edges and bugs, and expect things to move. Issues and pull requests are welcome.
 
-> **Runs on your machine.** Everything below is written for a laptop. Out of the box OpenBot runs with `OPENBOT_DEV_NO_AUTH`, which skips signing in and admits every request as one administrator. [Google sign-in](#sign-in-with-google) can be wired up instead.
+> **Runs on your machine.** Everything below is written for a laptop. Out of the box TinyBot runs with `OPENBOT_DEV_NO_AUTH`, which skips signing in and admits every request as one administrator. [Google sign-in](#sign-in-with-google) can be wired up instead.
 
 ## What it is
 
-An agent platform that runs inside your own infrastructure. Docker Compose brings up every part of it, the data sits in your PostgreSQL, and the model is yours to choose: no model ships in the box, and an administrator supplies the credential, which is encrypted at rest and never logged.
+TinyBot is the TinyFish desktop shell: six local product UIs on the start page, plus the OpenBot coworker platform underneath. Docker Compose brings up every part of it, the data sits in your PostgreSQL, and the model is yours to choose: no model ships in the box, and an administrator supplies the credential, which is encrypted at rest and never logged.
 
 Three coworkers ship in the example package, and they are configuration rather than code: **General Assistant** for everyday work, **Knowledge** for company questions, **Risk Analyst** for risk and compliance. Add your own by editing `agents.yaml` or from `/agents` in the UI.
 
@@ -96,6 +96,23 @@ A Bot is any endpoint speaking [AG-UI](https://github.com/ag-ui-protocol/ag-ui),
 
 `scripts/start.sh` starts Docker services, applies migrations, starts the API server on port 3001, starts the app on port 3010, and checks that the services answer their own health routes before printing next steps.
 
+The start page at <http://localhost:3010/> leads with six TinyFish product cards. Click a card to open that product inside TinyBot (an in-app iframe at `/apps/<product>`), not a new browser window.
+
+## TinyFish products
+
+Catalog defaults live in `app/src/lib/tinyfish/apps.ts` and stay on localhost. Several products share `:8080` / `:8765`; change the URL in that catalog (or `VITE_TINYFISH_<USAGE>_URL`) rather than rewriting the product repos. Cards may show **Unreachable** if the process is down; they still open the shell route.
+
+| Product   | One-line                                           | Start-page route        | Default URL                    | Usage id |
+| --------- | -------------------------------------------------- | ----------------------- | ------------------------------ | -------- |
+| TinyTail  | As-of Explorer — long-tail facts, read-only        | `/apps/tinytail`        | `http://127.0.0.1:8765/ui`     | `js-01`  |
+| TinyPulse | Event Feed — NE Asia LNG, graph is read-only       | `/apps/tinypulse`       | `http://127.0.0.1:8080/ui`     | `js-02`  |
+| TinyWeb   | Governed Fetch — deny-list still wins              | `/apps/tinyweb`         | `http://127.0.0.1:8765/ui`     | `js-03`  |
+| TinyWatch | Watch / When / Do — T1 required                    | `/apps/tinywatch`       | `http://127.0.0.1:8080/`       | `tf-01`  |
+| TinyKit   | Recipe Gallery — failed evals cannot instantiate   | `/apps/tinykit`         | `http://127.0.0.1:8080/`       | `tf-02`  |
+| TinyPipe  | Auth + usage console — fixture CIMD, credit pool   | `/apps/tinypipe`        | `http://127.0.0.1:3712/ui`     | `tf-03`  |
+
+TinyBot embeds those UIs. It does not clone the product repos and does not weaken their gates (TinyTail stays read-only, TinyPulse cannot mint facilities, TinyWatch cannot bypass T1, TinyKit failed evals cannot instantiate, TinyWeb deny-list wins, TinyPipe fixture tokens are `tfk.*` not JWTs).
+
 ## Try it
 
 - Open `/bot` and ask: `Open news.ycombinator.com and tell me the top story.`
@@ -107,7 +124,8 @@ A Bot is any endpoint speaking [AG-UI](https://github.com/ag-ui-protocol/ag-ui),
 
 | Route                | Purpose                                                            |
 | -------------------- | ------------------------------------------------------------------ |
-| `/`                  | Start and browse channels.                                         |
+| `/`                  | TinyFish product cards, then start and browse channels.            |
+| `/apps/:product`     | Embed one TinyFish product UI inside the TinyBot shell.            |
 | `/agents`            | Create, edit, duplicate, hide, delete, and launch coworkers.       |
 | `/channel/:id`       | Converse with one coworker and view its live screen/profile panel. |
 | `/bot`               | Direct chat with a Bot; `?agent=<id>` selects one.                 |
@@ -174,7 +192,7 @@ Settings worth knowing:
 
 | Variable                             | Use                                                                       |
 | ------------------------------------ | ------------------------------------------------------------------------- |
-| `OPENBOT_DEV_NO_AUTH`                | Admits every request as one administrator. How OpenBot runs today.        |
+| `OPENBOT_DEV_NO_AUTH`                | Admits every request as one administrator. How TinyBot runs today.        |
 | `OPENAI_BASE_URL`                    | Answers the OpenAI-shaped calls from somewhere else: a gateway, a proxy.  |
 | `ANTHROPIC_BASE_URL`, `GOOGLE_GENERATIVE_AI_BASE_URL` | The same, for those two APIs.            |
 | `COMPUTER_TOKEN`                     | Secret every Bot computer request must present. `start.sh` sets one.      |
@@ -271,4 +289,4 @@ Use `bash scripts/start.sh` for the whole stack. Use `bun run dev` only when you
 
 ## License
 
-[MIT](./LICENSE) © CopilotKit
+[MIT](./LICENSE) © CopilotKit. TinyBot is a branded fork of [CopilotKit/OpenBot](https://github.com/CopilotKit/openbot).
