@@ -1,4 +1,5 @@
 import { mutationOptions, type QueryClient } from "@tanstack/react-query";
+import { clearStoredTinyFishCredential } from "./client";
 import { authKeys } from "./queries";
 
 async function signOut() {
@@ -6,6 +7,7 @@ async function signOut() {
     method: "POST",
     credentials: "include",
   });
+  clearStoredTinyFishCredential();
   if (!response.ok) {
     throw new Error(`Could not sign out (${response.status})`);
   }

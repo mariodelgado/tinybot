@@ -5,6 +5,7 @@ import { createRuntimeAgentLoader } from "./agents/runtime-agents";
 import { createApp } from "./app";
 import { createAuditReader, createAuditStore, recordAuditEvent } from "./audit";
 import { createAuth } from "./auth";
+import { createConfiguredTinyFishAuth } from "./auth/tinyfish";
 import { DEV_ACTOR, initializeDevActorUser } from "./auth/dev-actor";
 import { createRoleRepository } from "./auth/guards";
 import type { OpenBotRole } from "./auth/roles";
@@ -58,8 +59,18 @@ async function resolveRequestActor(request: Request): Promise<{
   name: string;
   role: OpenBotRole;
 }> {
-  if (config.devNoAuth) {
+  if (config.devNoAuth && !tinyFishAuth) {
     return { id: DEV_ACTOR.id, name: DEV_ACTOR.email, role: DEV_ACTOR.role };
+  }
+  if (tinyFishAuth) {
+    const actor = await tinyFishAuth.actorFromHeaders(request.headers);
+    if (actor) {
+      return {
+        id: actor.id,
+        name: actor.name ?? actor.tinyfishUserId ?? actor.email,
+        role: actor.role,
+      };
+    }
   }
   const session = await auth?.api.getSession({ headers: request.headers });
   const user = session?.user;
@@ -152,6 +163,15 @@ const roleRepository = createRoleRepository(database);
 const loadAgentsForActor = createRuntimeAgentLoader(database, agentVault);
 await synchronizeTenantPackage(database, tenantPackage);
 const auth = config.auth ? createAuth(config, database) : undefined;
+const tinyFishAuth = config.tinyfish
+  ? createConfiguredTinyFishAuth({
+      database,
+      encryptionKey: config.keyEncryptionKey,
+      mcpUrl: config.tinyfish.mcpUrl,
+      issuer: config.tinyfish.issuer,
+      roleRepository,
+    })
+  : undefined;
 // One computer each, when a supervisor is configured to give them out. Without one every Bot shares
 // the computer at `baseUrl`, which is what a laptop wants and is honest about being one machine.
 const supervisor = config.computer?.supervisor
@@ -379,6 +399,7 @@ const app = createApp(
   sandboxedStore,
   // How a thread that has no channel is named, so the direct Bot chat is in the same namespace.
   threadIdentity,
+  tinyFishAuth,
 );
 
 /**

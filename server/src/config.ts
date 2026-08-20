@@ -56,8 +56,19 @@ export type DeploymentConfig = {
   /**
    * Local development only: admit everybody as a fixed administrator instead of requiring sign-in.
    * See auth/dev-actor.ts for the two locks that stop this reaching a deployment.
+   *
+   * When TinyFish (`tinyfish`) is configured, that is the real sign-in and this flag is not the
+   * gate. It remains an escape hatch for a laptop that is not running TinyPipe.
    */
   devNoAuth: boolean;
+  /**
+   * TinyFish MCP / CIMD identity via TinyPipe. Absent means TinyBot does not offer that sign-in.
+   * URLs stay on localhost / fixture issuers; nothing here invents a production TinyFish host.
+   */
+  tinyfish?: {
+    mcpUrl: string;
+    issuer?: string;
+  };
   /**
    * The Bot computer. Absent means the feature is off and its routes are not mounted, rather than
    * mounted and failing: a capability that is not configured should be missing, not broken.
@@ -360,6 +371,17 @@ function agentStallTimeoutMs(environment: Environment): number {
   return milliseconds;
 }
 
+function tinyfishConfig(
+  environment: Environment,
+): DeploymentConfig["tinyfish"] {
+  const mcpUrl = url(environment, "TINYFISH_MCP_URL");
+  if (!mcpUrl) {
+    return undefined;
+  }
+  const issuer = optional(environment, "TINYFISH_ISSUER");
+  return issuer ? { mcpUrl, issuer } : { mcpUrl };
+}
+
 export function loadConfig(
   environment: Environment = process.env,
 ): DeploymentConfig {
@@ -380,6 +402,7 @@ export function loadConfig(
     oauth: { google },
     auth: authConfig(environment, google),
     devNoAuth: devAuthEnabled(environment),
+    tinyfish: tinyfishConfig(environment),
     computer: computerConfig(environment),
     ...(optional(environment, "AGENT_TOOL_TOKEN")
       ? { agentToolToken: optional(environment, "AGENT_TOOL_TOKEN") as string }

@@ -1,6 +1,8 @@
 import { IconArrowLeft } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { storedTinyFishCredential } from "@/lib/auth/client";
 import { type TinyFishApp, tinyFishAppUrl } from "@/lib/tinyfish/apps";
 import { useTinyFishReachability } from "@/lib/tinyfish/use-reachability";
 
@@ -11,6 +13,7 @@ import { useTinyFishReachability } from "@/lib/tinyfish/use-reachability";
 export function TinyFishAppFrame({ app }: { app: TinyFishApp }) {
   const url = tinyFishAppUrl(app);
   const reachability = useTinyFishReachability(url);
+  const frameRef = useRef<HTMLIFrameElement>(null);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -53,6 +56,20 @@ export function TinyFishAppFrame({ app }: { app: TinyFishApp }) {
       ) : null}
       <iframe
         className="min-h-0 w-full flex-1 border-0 bg-background"
+        onLoad={() => {
+          const token = storedTinyFishCredential();
+          const frame = frameRef.current;
+          if (!token || !frame?.contentWindow) return;
+          try {
+            frame.contentWindow.postMessage(
+              { type: "tinyfish/credential", token },
+              new URL(url).origin,
+            );
+          } catch {
+            // The product UI keeps its own gates; a refused postMessage does not bypass them.
+          }
+        }}
+        ref={frameRef}
         src={url}
         title={app.title}
       />

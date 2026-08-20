@@ -1,11 +1,13 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { signInWithGoogle } from "@/lib/auth/client";
-import { appConfig } from "@/lib/generated/application-config";
-import { currentUserQueryOptions } from "../lib/auth/queries";
+import { type FormEvent, useState } from "react";
 import AgentOrb from "@/components/agents/orb/agent-orb";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { signInWithGoogle, signInWithTinyFish } from "@/lib/auth/client";
+import { currentUserQueryOptions } from "@/lib/auth/queries";
+import { appConfig } from "@/lib/generated/application-config";
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 
@@ -26,8 +28,13 @@ export const Route = createFileRoute("/sign")({
 });
 
 function SignScreen() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tinyFishToken, setTinyFishToken] = useState("");
+  const showGoogle = appConfig.auth.providers.includes("google");
+  const showTinyFish = appConfig.auth.providers.includes("tinyfish");
 
   async function handleGoogleSignIn() {
     setError(null);
@@ -40,6 +47,24 @@ function SignScreen() {
         caughtError instanceof Error
           ? caughtError.message
           : "Could not start Google sign-in.",
+      );
+      setIsPending(false);
+    }
+  }
+
+  async function handleTinyFishSignIn(event: FormEvent) {
+    event.preventDefault();
+    setError(null);
+    setIsPending(true);
+    try {
+      await signInWithTinyFish(tinyFishToken);
+      await queryClient.invalidateQueries(currentUserQueryOptions());
+      await navigate({ to: "/" });
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Could not sign in with TinyFish.",
       );
       setIsPending(false);
     }
@@ -85,20 +110,52 @@ function SignScreen() {
           transition={{ duration: ENTRANCE_SECONDS, ease: EASE_OUT }}
           variants={{ hidden, shown }}
         >
-          {appConfig.auth.providers.includes("google") ? (
+          {showTinyFish ? (
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={handleTinyFishSignIn}
+            >
+              <Input
+                aria-label="TinyFish credential"
+                autoComplete="off"
+                disabled={isPending}
+                onChange={(event) => setTinyFishToken(event.target.value)}
+                placeholder="tfk.alice"
+                spellCheck={false}
+                value={tinyFishToken}
+              />
+              <Button
+                className="h-10 w-full tracking-tight"
+                disabled={isPending || !tinyFishToken.trim()}
+                size="lg"
+                type="submit"
+              >
+                {isPending ? "Signing in…" : "Sign in with TinyFish"}
+              </Button>
+              <p className="text-center text-xs text-muted-foreground">
+                Paste a TinyPipe fixture token. <code>tfk.alice</code> and{" "}
+                <code>tfk.exhausted</code> both sign in; exhausted is a credit
+                gate, not an auth gate.
+              </p>
+            </form>
+          ) : null}
+          {showGoogle ? (
             <Button
-              className="h-10 w-full tracking-tight"
+              className={`h-10 w-full tracking-tight ${showTinyFish ? "mt-4" : ""}`}
               disabled={isPending}
               onClick={handleGoogleSignIn}
               size="lg"
+              type="button"
+              variant={showTinyFish ? "outline" : "default"}
             >
               {isPending ? "Opening Google…" : "Continue with Google"}
             </Button>
-          ) : (
+          ) : null}
+          {!showTinyFish && !showGoogle ? (
             <p className="text-center text-sm text-muted-foreground">
               No auth providers are configured.
             </p>
-          )}
+          ) : null}
           {error ? (
             <p className="mt-3 text-sm text-destructive" role="alert">
               {error}

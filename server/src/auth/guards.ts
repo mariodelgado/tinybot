@@ -10,6 +10,9 @@ export type AuthenticatedActor = {
   name?: string | null;
   image?: string | null;
   role: OpenBotRole;
+  tinyfishUserId?: string;
+  iss?: string;
+  clientId?: string;
 };
 
 export type AuthService = {
@@ -50,15 +53,33 @@ export function createRoleRepository(database: Database): RoleRepository {
   };
 }
 
+export type TinyFishSessionReader = {
+  actorFromHeaders: (headers: Headers) => Promise<AuthenticatedActor | null>;
+};
+
 export function createRequireUser(
-  auth: AuthService,
+  auth: AuthService | undefined,
   roleRepository: RoleRepository,
+  tinyFish?: TinyFishSessionReader,
 ): MiddlewareHandler<{ Variables: AppVariables }> {
   return async (context, next) => {
-    const session = await auth.api.getSession({
-      headers: context.req.raw.headers,
-      query: { disableCookieCache: true },
-    });
+    if (tinyFish) {
+      const tinyFishActor = await tinyFish.actorFromHeaders(
+        context.req.raw.headers,
+      );
+      if (tinyFishActor) {
+        context.set("actor", tinyFishActor);
+        await next();
+        return;
+      }
+    }
+
+    const session = auth
+      ? await auth.api.getSession({
+          headers: context.req.raw.headers,
+          query: { disableCookieCache: true },
+        })
+      : null;
 
     if (!session) {
       return context.json({ error: "Authentication required." }, 401);

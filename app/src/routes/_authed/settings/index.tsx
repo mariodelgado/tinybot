@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   PageRows,
@@ -5,7 +6,6 @@ import {
   PageShell,
 } from "@/components/layout/page-shell";
 import { useTheme } from "@/components/theme-provider";
-import { appConfig } from "@/lib/generated/application-config";
 import {
   Item,
   ItemActions,
@@ -14,6 +14,8 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { Switch } from "@/components/ui/switch";
+import { currentUserQueryOptions } from "@/lib/auth/queries";
+import { appConfig } from "@/lib/generated/application-config";
 
 export const Route = createFileRoute("/_authed/settings/")({
   component: RouteComponent,
@@ -21,6 +23,7 @@ export const Route = createFileRoute("/_authed/settings/")({
 
 function RouteComponent() {
   const { dark, setDark } = useTheme();
+  const { data: currentUser } = useQuery(currentUserQueryOptions());
 
   /*
    * The measurements that used to be written out here now live in `PageShell`, which Skills, Admin
@@ -51,6 +54,43 @@ function RouteComponent() {
           </Item>
         </PageRows>
       </PageSection>
+      {currentUser?.tinyfishUserId ? (
+        <PageSection
+          description="The TinyFish identity TinyBot verified against TinyPipe. Credits stay on TinyPipe; this profile is only who you are here."
+          title="TinyFish profile"
+        >
+          <PageRows>
+            <Item size="sm">
+              <ItemContent>
+                <ItemTitle>tinyfish_user_id</ItemTitle>
+                <ItemDescription>
+                  <code>{currentUser.tinyfishUserId}</code>
+                </ItemDescription>
+              </ItemContent>
+            </Item>
+            {currentUser.iss ? (
+              <Item size="sm">
+                <ItemContent>
+                  <ItemTitle>iss</ItemTitle>
+                  <ItemDescription>
+                    <code>{currentUser.iss}</code>
+                  </ItemDescription>
+                </ItemContent>
+              </Item>
+            ) : null}
+            {currentUser.clientId ? (
+              <Item size="sm">
+                <ItemContent>
+                  <ItemTitle>client_id</ItemTitle>
+                  <ItemDescription>
+                    <code>{currentUser.clientId}</code>
+                  </ItemDescription>
+                </ItemContent>
+              </Item>
+            ) : null}
+          </PageRows>
+        </PageSection>
+      ) : null}
     </PageShell>
   );
 }

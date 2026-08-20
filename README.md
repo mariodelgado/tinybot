@@ -98,6 +98,29 @@ A Bot is any endpoint speaking [AG-UI](https://github.com/ag-ui-protocol/ag-ui),
 
 The start page at <http://localhost:3010/> leads with six TinyFish product cards. Click a card to open that product inside TinyBot (an in-app iframe at `/apps/<product>`), not a new browser window.
 
+## Sign in with TinyFish
+
+TinyPipe (`tf-03`) is the auth + metering surface. TinyBot verifies a Phase 1 fixture token against it, then upserts a user profile keyed by `tinyfish_user_id`. After `bash scripts/start.sh`:
+
+1. Uncomment in `.env` (localhost only — do not invent a production host):
+
+   ```sh
+   TINYFISH_MCP_URL=http://127.0.0.1:3712/mcp
+   TINYFISH_ISSUER=https://issuer.fixtures.tinyfish.test
+   ```
+
+   When `TINYFISH_MCP_URL` is set, this is the real sign-in. `OPENBOT_DEV_NO_AUTH` stays an escape hatch only if TinyPipe is not running.
+
+2. Restart the app/server so generated config picks up the TinyFish provider.
+
+3. Open <http://localhost:3010/sign> and paste a fixture token:
+
+   - `tfk.alice` → profile `tfu_alice` (`iss` = `https://issuer.fixtures.tinyfish.test`, `client_id` = `https://cimd.fixtures.tinyfish.test/client.json`)
+   - `tfk.exhausted` → profile `tfu_exhausted` (valid login; 0 credits is a TinyPipe credit gate, not an auth gate)
+   - anything else → 401
+
+A second `tfk.alice` reuses `tfu_alice`. The session cookie binds to that profile. TinyBot does not write TinyPipe credits or call `record_usage` for sign-in. Settings shows `tinyfish_user_id`. Tokens are opaque `tfk.*` keyring entries, not JWTs.
+
 ## TinyFish products
 
 Catalog defaults live in `app/src/lib/tinyfish/apps.ts` and stay on localhost. Several products share `:8080` / `:8765`; change the URL in that catalog (or `VITE_TINYFISH_<USAGE>_URL`) rather than rewriting the product repos. Cards may show **Unreachable** if the process is down; they still open the shell route.
@@ -130,7 +153,8 @@ TinyBot embeds those UIs. It does not clone the product repos and does not weake
 | `/channel/:id`       | Converse with one coworker and view its live screen/profile panel. |
 | `/bot`               | Direct chat with a Bot; `?agent=<id>` selects one.                 |
 | `/skills`            | Create and enable personal skills.                                 |
-| `/settings`          | User preferences.                                                  |
+| `/sign`              | TinyFish fixture-desk sign-in (and Google, when configured).       |
+| `/settings`          | User preferences and TinyFish profile (`tinyfish_user_id`).        |
 | `/admin/connectors`  | Configure deployment knowledge sources.                            |
 | `/admin/credentials` | Store write-only encrypted credentials.                            |
 | `/admin/computers`   | View, stop, and reset Bot computers.                               |

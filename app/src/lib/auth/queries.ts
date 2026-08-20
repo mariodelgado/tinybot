@@ -6,6 +6,9 @@ export type AuthenticatedUser = {
   name?: string | null;
   image?: string | null;
   role: "admin" | "user";
+  tinyfishUserId?: string;
+  iss?: string;
+  clientId?: string;
 };
 
 export const authKeys = {

@@ -38,6 +38,26 @@ describe("deployment configuration", () => {
     expect(config.tenantPackageDirectory).toBe("../examples/fintech");
   });
 
+  test("enables TinyFish sign-in from TINYFISH_MCP_URL without inventing a production host", () => {
+    const config = loadConfig({
+      DATABASE_URL: baseEnvironment.DATABASE_URL,
+      KEY_ENCRYPTION_KEY: baseEnvironment.KEY_ENCRYPTION_KEY,
+      INTELLIGENCE_API_URL: baseEnvironment.INTELLIGENCE_API_URL,
+      INTELLIGENCE_GATEWAY_WS_URL: baseEnvironment.INTELLIGENCE_GATEWAY_WS_URL,
+      INTELLIGENCE_API_KEY: baseEnvironment.INTELLIGENCE_API_KEY,
+      COPILOTKIT_LICENSE_TOKEN: baseEnvironment.COPILOTKIT_LICENSE_TOKEN,
+      MANAGED_AGENT_AG_UI_URL: baseEnvironment.MANAGED_AGENT_AG_UI_URL,
+      TINYFISH_MCP_URL: "http://127.0.0.1:3712/mcp",
+      TINYFISH_ISSUER: "https://issuer.fixtures.tinyfish.test",
+    });
+
+    expect(config.tinyfish).toEqual({
+      mcpUrl: "http://127.0.0.1:3712/mcp",
+      issuer: "https://issuer.fixtures.tinyfish.test",
+    });
+    expect(config.auth).toBeUndefined();
+  });
+
   test("allows deployment without an authentication provider", () => {
     const config = loadConfig({
       DATABASE_URL: baseEnvironment.DATABASE_URL,
