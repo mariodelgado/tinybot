@@ -6,6 +6,7 @@ import { Composer, toAgentOptions } from "@/components/channels/composer";
 import { StaggerItem } from "@/components/layout/stagger";
 import { TinyFishAppCard } from "@/components/tinyfish/app-card";
 import { agentListQueryOptions } from "@/lib/agents/queries";
+import { currentUserQueryOptions } from "@/lib/auth/queries";
 import { useStartChannel } from "@/lib/channels/start";
 import { appConfig } from "@/lib/generated/application-config";
 import { TINYFISH_APPS } from "@/lib/tinyfish/apps";
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/_authed/_app/")({
 
 function RouteComponent() {
   const { data: agents } = useQuery(agentListQueryOptions());
+  const { data: currentUser } = useQuery(currentUserQueryOptions());
   const explore = agents?.filter((a) => !a.mine && a.visibility === "public");
   const { start, pending } = useStartChannel();
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +35,16 @@ function RouteComponent() {
           <h1 className="text-2xl font-bold tracking-tight mt-1.5 text-center">
             TinyFish products
           </h1>
+          {currentUser?.sprite ? (
+            <p className="mt-2 font-mono text-[11px] text-muted-foreground">
+              Sprite {currentUser.sprite.name} · {currentUser.sprite.status}
+            </p>
+          ) : null}
         </div>
         <div className="mt-8 grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {TINYFISH_APPS.map((app, index) => (
             <StaggerItem className="h-full" key={app.usageId} index={index}>
-              <TinyFishAppCard app={app} />
+              <TinyFishAppCard app={app} sprite={currentUser?.sprite} />
             </StaggerItem>
           ))}
         </div>

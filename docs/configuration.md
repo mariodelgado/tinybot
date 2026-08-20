@@ -90,10 +90,14 @@ Two things are worth knowing before pointing a deployment at any gateway. Not ev
 | `INITIAL_ADMIN_EMAILS`       | Comma-separated users seeded as administrators.                                        |
 | `TINYFISH_MCP_URL`           | TinyPipe MCP URL. When set, TinyFish is the sign-in path. `start.sh` writes `http://127.0.0.1:3712/mcp`. |
 | `TINYFISH_ISSUER`            | Expected CIMD `iss`. Fixture: `https://issuer.fixtures.tinyfish.test`.                 |
+| `SPRITES_TOKEN` / `SPRITE_TOKEN` | Fly Sprites org token. When set, first TinyFish sign-in creates or reuses one Sprite per user. Unset keeps localhost compose. |
+| `SPRITES_API_URL`            | Sprites API base. Default `https://api.sprites.dev/v1`. Do not set in CI.              |
 
 Google OAuth client id and secret must be configured together. If Google OAuth is configured, `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` are also required.
 
 TinyFish sign-in verifies a Phase 1 `tfk.*` keyring token against TinyPipe. It does not fetch CIMD or JWKS, does not mint a verifier, and does not call `record_usage`. `tfk.alice` creates profile `tfu_alice`; a second login upserts that row. `tfk.exhausted` creates `tfu_exhausted` (valid login; exhausted is a credit gate). Non-fixture tokens are 401. TinyPipe must be healthy before `/sign` works. `OPENBOT_DEV_NO_AUTH` remains an escape hatch only when TinyPipe is not configured.
+
+When `SPRITES_TOKEN` or `SPRITE_TOKEN` is set, sign-in also ensures a Fly Sprite named from `tinyfish_user_id` (`tfu_alice` → `tinybot-tfu-alice`). Create uses `url_settings.auth = "sprite"`. A Fly failure is stored as sprite status `error` and does not block sign-in. Cards then load `/api/sprite/apps/<slug>/...` through TinyBot; a user can only proxy to their own Sprite. Without a token, cards stay on the remapped localhost ports.
 
 ## Computer and supervisor
 

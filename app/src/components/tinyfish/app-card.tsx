@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import type { SpriteStatus } from "@/lib/auth/queries";
 import {
   type TinyFishApp,
   tinyFishAppPath,
@@ -6,8 +7,14 @@ import {
 } from "@/lib/tinyfish/apps";
 import { useTinyFishReachability } from "@/lib/tinyfish/use-reachability";
 
-export function TinyFishAppCard({ app }: { app: TinyFishApp }) {
-  const url = tinyFishAppUrl(app);
+export function TinyFishAppCard({
+  app,
+  sprite,
+}: {
+  app: TinyFishApp;
+  sprite?: SpriteStatus;
+}) {
+  const url = tinyFishAppUrl(app, sprite);
   const reachability = useTinyFishReachability(url);
 
   return (

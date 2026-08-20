@@ -1,5 +1,6 @@
 import type { Hono as HonoApp, MiddlewareHandler } from "hono";
 import { Hono } from "hono";
+import { authoriseAgentCall } from "./agents/callback-token";
 import type { AgentProfileStore } from "./agents/profile-store";
 import { createAgentRoutes } from "./agents/routes";
 import { type AuditReader, type AuditStore, auditQueryFromUrl } from "./audit";
@@ -24,13 +25,14 @@ import type { ComputerClient } from "./computer/client";
 import type { ComputerGateway } from "./computer/gateway";
 import type { PolicyStore } from "./computer/policy-store";
 import { createComputerRoutes } from "./computer/routes";
-import { authoriseAgentCall } from "./agents/callback-token";
 import type { DeploymentConfig } from "./config";
 import type { ConnectorAdminService } from "./connectors";
 import type { CredentialAdminService, CredentialInput } from "./credentials";
 import { createPluginRoutes } from "./plugins/routes";
-import { REFUSAL_MARKER } from "./plugins/tools";
 import type { PluginStore } from "./plugins/store";
+import { REFUSAL_MARKER } from "./plugins/tools";
+import { createSpriteProxyHandler } from "./sprites/proxy";
+import type { SpriteAssignmentStore } from "./sprites/store";
 import type { PackageStatusReader } from "./tenant-package";
 
 export function createApp(
@@ -103,6 +105,14 @@ export function createApp(
    * OPENBOT_DEV_NO_AUTH escape hatch is not the gate.
    */
   tinyFishAuth?: TinyFishAuthService,
+  /**
+   * Per-user Fly Sprite proxy. Absent means cards stay on localhost remapped ports.
+   */
+  sprites?: {
+    assignments: SpriteAssignmentStore;
+    token?: string;
+    fetch?: typeof fetch;
+  },
 ) {
   const app = new Hono<{ Variables: AppVariables }>();
 
@@ -140,6 +150,7 @@ export function createApp(
             iss: profile.iss,
             clientId: profile.clientId,
             role: "user",
+            ...(profile.sprite ? { sprite: profile.sprite } : {}),
           },
         });
       } catch (error) {
@@ -194,6 +205,11 @@ export function createApp(
   app.get("/api/me", requireUser, (context) =>
     context.json({ user: context.var.actor }),
   );
+  if (sprites) {
+    const proxy = createSpriteProxyHandler(sprites);
+    app.all("/api/sprite/apps/:slug", requireUser, proxy);
+    app.all("/api/sprite/apps/:slug/*", requireUser, proxy);
+  }
   app.get("/api/admin/status", requireUser, (context) => {
     const denied = requireAdmin(context);
     return denied ?? context.json({ status: "ok" });

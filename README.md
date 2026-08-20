@@ -134,6 +134,12 @@ Catalog defaults live in `app/src/lib/tinyfish/stack.ts` (host ports TinyBot pub
 
 Set `OPENBOT_SKIP_TINYFISH_PRODUCTS=1` to start TinyBot without the six.
 
+### Fly Sprites (per-user production)
+
+Localhost compose is the default. Set `SPRITES_TOKEN` or `SPRITE_TOKEN` (same Fly token, two env names) to provision **one Sprite per TinyFish user** on first sign-in. The Sprite URL stays `url_settings.auth = "sprite"` (never public). Start-page cards then iframe through TinyBot's session-authenticated proxy (`/api/sprite/apps/<slug>/...`) so the browser never holds the Fly token. TinyPipe still starts first inside that Sprite; the six products listen on the same remapped ports as localhost, behind one Caddy `http_port` on 8080.
+
+CI is fixture-only. Tests mock the Sprites HTTP API and never call `api.sprites.dev`.
+
 ## Try it
 
 - Open `/bot` and ask: `Open news.ycombinator.com and tell me the top story.`

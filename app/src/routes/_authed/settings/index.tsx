@@ -88,6 +88,18 @@ function RouteComponent() {
                 </ItemContent>
               </Item>
             ) : null}
+            {currentUser.sprite ? (
+              <Item size="sm">
+                <ItemContent>
+                  <ItemTitle>Sprite</ItemTitle>
+                  <ItemDescription>
+                    <code>
+                      {currentUser.sprite.name} · {currentUser.sprite.status}
+                    </code>
+                  </ItemDescription>
+                </ItemContent>
+              </Item>
+            ) : null}
           </PageRows>
         </PageSection>
       ) : null}

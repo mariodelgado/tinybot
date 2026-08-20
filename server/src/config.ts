@@ -70,6 +70,14 @@ export type DeploymentConfig = {
     issuer?: string;
   };
   /**
+   * Fly Sprites per-user product runtime. Absent means localhost compose is the path.
+   * Token is SPRITES_TOKEN or SPRITE_TOKEN. CI must not set this.
+   */
+  sprites?: {
+    token: string;
+    apiUrl: string;
+  };
+  /**
    * The Bot computer. Absent means the feature is off and its routes are not mounted, rather than
    * mounted and failing: a capability that is not configured should be missing, not broken.
    */
@@ -382,6 +390,21 @@ function tinyfishConfig(
   return issuer ? { mcpUrl, issuer } : { mcpUrl };
 }
 
+const DEFAULT_SPRITES_API = "https://api.sprites.dev/v1";
+
+function spritesConfig(environment: Environment): DeploymentConfig["sprites"] {
+  const token =
+    optional(environment, "SPRITES_TOKEN") ??
+    optional(environment, "SPRITE_TOKEN");
+  if (!token) {
+    return undefined;
+  }
+  return {
+    token,
+    apiUrl: optional(environment, "SPRITES_API_URL") ?? DEFAULT_SPRITES_API,
+  };
+}
+
 export function loadConfig(
   environment: Environment = process.env,
 ): DeploymentConfig {
@@ -403,6 +426,7 @@ export function loadConfig(
     auth: authConfig(environment, google),
     devNoAuth: devAuthEnabled(environment),
     tinyfish: tinyfishConfig(environment),
+    sprites: spritesConfig(environment),
     computer: computerConfig(environment),
     ...(optional(environment, "AGENT_TOOL_TOKEN")
       ? { agentToolToken: optional(environment, "AGENT_TOOL_TOKEN") as string }

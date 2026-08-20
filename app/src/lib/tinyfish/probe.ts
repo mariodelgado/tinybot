@@ -16,9 +16,11 @@ export async function probeTinyFishApp(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
+    const sameOrigin = url.startsWith("/");
     await fetch(url, {
       method: "GET",
-      mode: "no-cors",
+      mode: sameOrigin ? "same-origin" : "no-cors",
+      credentials: sameOrigin ? "include" : "same-origin",
       cache: "no-store",
       signal: controller.signal,
     });

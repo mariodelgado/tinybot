@@ -26,6 +26,8 @@ Regenerate it with `bun run diagram` after changing anything it shows.
 
 `scripts/start.sh` starts TinyPipe first, then the other five TinyFish products (`docker-compose.tinyfish.yml` or a wrap of each product's compose), then PostgreSQL, `agent-computer`, `agent-bot`, `agent-langgraph`, and the supervisor through Docker Compose, then starts `server` and `app` on the host.
 
+With `SPRITES_TOKEN` / `SPRITE_TOKEN`, TinyBot is the shared control plane and each TinyFish user gets one Fly Sprite. The Sprite URL is token-gated (`auth: sprite`). Inside the Sprite, Caddy is the only `http_port` (8080) and reverse-proxies `/tinypipe`, `/tinytail`, … to the six product listen ports. TinyBot's session proxy (`/api/sprite/apps/<slug>`) is the only browser path to that URL. Local compose is unchanged when the token is unset. CI never calls `api.sprites.dev`.
+
 The compose file also defines optional SPIRE services. `start.sh` does not start them.
 
 ## Runtime flow

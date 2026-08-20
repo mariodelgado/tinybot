@@ -1,22 +1,22 @@
 import type { Database } from "../../db/client";
 import type { RoleRepository } from "../guards";
 import { createDatabaseTinyFishProfileStore } from "./profiles";
-import { createDatabaseTinyFishSessionStore } from "./sessions";
 import { createTinyFishAuthService, type TinyFishAuthService } from "./service";
+import { createDatabaseTinyFishSessionStore } from "./sessions";
 import { createTinyFishVerifier } from "./verify";
 
 export {
   FIXTURE_CIMD,
   FIXTURE_ISSUER,
-  PHASE1_FIXTURES,
-  TINYFISH_PROVIDER_ID,
-  TINYFISH_SESSION_COOKIE,
-  TinyFishUnauthenticatedError,
-  TinyFishUnavailableError,
   fixtureClaimsFor,
   isPhase1TinyFishToken,
   normalizeTinyFishToken,
+  PHASE1_FIXTURES,
+  TINYFISH_PROVIDER_ID,
+  TINYFISH_SESSION_COOKIE,
   type TinyFishClaims,
+  TinyFishUnauthenticatedError,
+  TinyFishUnavailableError,
 } from "./claims";
 export {
   createDatabaseTinyFishProfileStore,
@@ -26,14 +26,14 @@ export {
   type TinyFishProfileStore,
 } from "./profiles";
 export {
-  createDatabaseTinyFishSessionStore,
-  createMemoryTinyFishSessionStore,
-} from "./sessions";
-export {
   createTinyFishAuthService,
   isTinyFishAuthError,
   type TinyFishAuthService,
 } from "./service";
+export {
+  createDatabaseTinyFishSessionStore,
+  createMemoryTinyFishSessionStore,
+} from "./sessions";
 export { createTinyFishVerifier, type TinyFishVerifier } from "./verify";
 
 export function createConfiguredTinyFishAuth(options: {
@@ -42,6 +42,10 @@ export function createConfiguredTinyFishAuth(options: {
   mcpUrl: string;
   issuer?: string;
   roleRepository: RoleRepository;
+  provisionSprite?: Parameters<
+    typeof createTinyFishAuthService
+  >[0]["provisionSprite"];
+  sprites?: Parameters<typeof createTinyFishAuthService>[0]["sprites"];
 }): TinyFishAuthService {
   return createTinyFishAuthService({
     verifier: createTinyFishVerifier({
@@ -54,5 +58,9 @@ export function createConfiguredTinyFishAuth(options: {
       options.encryptionKey,
     ),
     rolesForUser: options.roleRepository.rolesForUser,
+    ...(options.provisionSprite
+      ? { provisionSprite: options.provisionSprite }
+      : {}),
+    ...(options.sprites ? { sprites: options.sprites } : {}),
   });
 }

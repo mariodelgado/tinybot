@@ -21,6 +21,7 @@ export type TinyFishApp = {
   oneLiner: string;
   defaultUrl: string;
   repo: string;
+  path: string;
 };
 
 export const TINYFISH_APPS: readonly TinyFishApp[] = TINYFISH_PRODUCTS.map(
@@ -31,8 +32,18 @@ export const TINYFISH_APPS: readonly TinyFishApp[] = TINYFISH_PRODUCTS.map(
     oneLiner: product.oneLiner,
     defaultUrl: tinyFishProductUrl(product),
     repo: product.repo,
+    path: product.path,
   }),
 );
+
+export type TinyFishSpriteHint = {
+  url?: string;
+};
+
+export function tinyFishSpriteProxyPath(app: TinyFishApp): string {
+  const path = app.path.startsWith("/") ? app.path : `/${app.path}`;
+  return `/api/sprite/apps/${app.slug}${path}`;
+}
 
 const ENV_URL_KEYS: Record<TinyFishUsageId, string> = {
   "js-01": "VITE_TINYFISH_JS_01_URL",
@@ -53,8 +64,17 @@ function envUrlOverride(usageId: TinyFishUsageId): string | undefined {
     : undefined;
 }
 
-/** Resolved embed URL: env override if set, otherwise the catalog default. */
-export function tinyFishAppUrl(app: TinyFishApp): string {
+/**
+ * Resolved embed URL. A signed-in Sprite assignment uses TinyBot's authenticated
+ * proxy. Otherwise the remapped localhost catalog (or a VITE override).
+ */
+export function tinyFishAppUrl(
+  app: TinyFishApp,
+  sprite?: TinyFishSpriteHint | null,
+): string {
+  if (sprite?.url) {
+    return tinyFishSpriteProxyPath(app);
+  }
   return envUrlOverride(app.usageId) ?? app.defaultUrl;
 }
 

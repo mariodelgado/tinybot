@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import type { Context, MiddlewareHandler } from "hono";
 import type { Database } from "../db/client";
 import { userRoles } from "../db/schema";
+import type { SpriteAssignment } from "../sprites/store";
 import type { OpenBotRole } from "./roles";
 
 export type AuthenticatedActor = {
@@ -13,6 +14,7 @@ export type AuthenticatedActor = {
   tinyfishUserId?: string;
   iss?: string;
   clientId?: string;
+  sprite?: SpriteAssignment;
 };
 
 export type AuthService = {

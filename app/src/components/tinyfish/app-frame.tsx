@@ -1,17 +1,20 @@
 import { IconArrowLeft } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { storedTinyFishCredential } from "@/lib/auth/client";
+import { currentUserQueryOptions } from "@/lib/auth/queries";
 import { type TinyFishApp, tinyFishAppUrl } from "@/lib/tinyfish/apps";
 import { useTinyFishReachability } from "@/lib/tinyfish/use-reachability";
 
 /**
- * In-app webview for a TinyFish product. The iframe loads the catalog URL; TinyBot does not
- * proxy, rewrite, or weaken that product's own gates.
+ * In-app webview for a TinyFish product. With a per-user Sprite the iframe loads
+ * TinyBot's authenticated proxy; otherwise the remapped localhost catalog.
  */
 export function TinyFishAppFrame({ app }: { app: TinyFishApp }) {
-  const url = tinyFishAppUrl(app);
+  const { data: currentUser } = useQuery(currentUserQueryOptions());
+  const url = tinyFishAppUrl(app, currentUser?.sprite);
   const reachability = useTinyFishReachability(url);
   const frameRef = useRef<HTMLIFrameElement>(null);
 
@@ -63,7 +66,9 @@ export function TinyFishAppFrame({ app }: { app: TinyFishApp }) {
           try {
             frame.contentWindow.postMessage(
               { type: "tinyfish/credential", token },
-              new URL(url).origin,
+              url.startsWith("/")
+                ? window.location.origin
+                : new URL(url).origin,
             );
           } catch {
             // The product UI keeps its own gates; a refused postMessage does not bypass them.

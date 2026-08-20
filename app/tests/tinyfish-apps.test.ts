@@ -4,6 +4,7 @@ import {
   type TinyFishUsageId,
   tinyFishAppBySlug,
   tinyFishAppPath,
+  tinyFishAppUrl,
 } from "../src/lib/tinyfish/apps";
 
 const expected = [
@@ -78,5 +79,24 @@ describe("TinyFish start-page catalog", () => {
       expect(tinyFishAppPath(app)).toBe(`/apps/${app.slug}`);
     }
     expect(tinyFishAppBySlug("unknown")).toBeUndefined();
+  });
+
+  test("uses the TinyBot proxy path when a Sprite URL is present", () => {
+    const tinypipe = tinyFishAppBySlug("tinypipe");
+    const tinytail = tinyFishAppBySlug("tinytail");
+    if (!tinypipe || !tinytail) {
+      throw new Error("catalog is missing products");
+    }
+    expect(tinyFishAppUrl(tinypipe)).toBe("http://127.0.0.1:3712/ui");
+    expect(
+      tinyFishAppUrl(tinypipe, {
+        url: "https://tinybot-tfu-alice-org.sprites.app",
+      }),
+    ).toBe("/api/sprite/apps/tinypipe/ui");
+    expect(
+      tinyFishAppUrl(tinytail, {
+        url: "https://tinybot-tfu-alice-org.sprites.app",
+      }),
+    ).toBe("/api/sprite/apps/tinytail/ui");
   });
 });

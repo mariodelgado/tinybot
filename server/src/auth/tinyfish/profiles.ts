@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { Database } from "../../db/client";
 import { accounts, userRoles, users } from "../../db/schema";
+import type { SpriteAssignment } from "../../sprites/store";
 import { TINYFISH_PROVIDER_ID, type TinyFishClaims } from "./claims";
 
 export type TinyFishProfile = {
@@ -10,6 +11,7 @@ export type TinyFishProfile = {
   tinyfishUserId: string;
   iss: string;
   clientId: string;
+  sprite?: SpriteAssignment;
 };
 
 export type TinyFishProfileStore = {
