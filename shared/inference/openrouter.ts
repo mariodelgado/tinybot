@@ -186,7 +186,7 @@ export function createOpenRouterFallbackFetch(
   const defaultModel = models.defaultModel ?? OPENROUTER_DEFAULT_MODEL;
   const fallbackModel = models.fallbackModel ?? OPENROUTER_FALLBACK_MODEL;
 
-  return async (input, init) => {
+  const wrapped: typeof fetch = async (input, init) => {
     const url = requestUrl(input);
     const method = (init?.method ?? "GET").toUpperCase();
     if (method !== "POST" || !url.includes("/chat/completions")) {
@@ -230,6 +230,11 @@ export function createOpenRouterFallbackFetch(
     logServed(fallbackModel);
     return retry;
   };
+  wrapped.preconnect =
+    typeof baseFetch.preconnect === "function"
+      ? baseFetch.preconnect.bind(baseFetch)
+      : () => undefined;
+  return wrapped;
 }
 
 export function installOpenRouterFallbackFetch(
