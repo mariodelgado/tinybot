@@ -1,8 +1,5 @@
 import type { Context } from "hono";
-import {
-  tinyFishProductBySlug,
-  tinyFishProductHealthUrl,
-} from "../../../app/src/lib/tinyfish/stack";
+import { tinyFishProductBySlug } from "../../../app/src/lib/tinyfish/stack";
 import type { AppVariables } from "../auth/guards";
 import { copyForwardHeaders } from "./forward";
 
@@ -66,9 +63,4 @@ export function createProductProxyHandler(options: {
       headers: outbound,
     });
   };
-}
-
-export function productHealthProbeUrl(slug: string): string | undefined {
-  const product = tinyFishProductBySlug(slug);
-  return product ? tinyFishProductHealthUrl(product) : undefined;
 }
