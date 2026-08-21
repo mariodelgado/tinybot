@@ -115,12 +115,14 @@ export function createApp(
     fetch?: typeof fetch;
   },
   /**
-   * Local product API proxy. Always mounted so TinyBot can call backends
-   * without a Sprite. Forwards to 127.0.0.1:<hostPort> with the TinyFish Bearer.
+   * Product API proxy. Always mounted so TinyBot can call backends without a
+   * Sprite. Forwards to 127.0.0.1:<hostPort> or TINYFISH_<SLUG>_URL /
+   * VITE_TINYFISH_<USAGE>_URL (Fly) with the TinyFish Bearer.
    */
   products?: {
     credentialFor?: (userId: string) => Promise<string | undefined>;
     fetch?: typeof fetch;
+    env?: Record<string, string | undefined>;
   },
 ) {
   const app = new Hono<{ Variables: AppVariables }>();
@@ -222,6 +224,7 @@ export function createApp(
   const productProxy = createProductProxyHandler({
     credentialFor: products?.credentialFor ?? tinyFishAuth?.credentialFor,
     fetch: products?.fetch,
+    env: products?.env,
   });
   app.all("/api/products/:slug", requireUser, productProxy);
   app.all("/api/products/:slug/*", requireUser, productProxy);

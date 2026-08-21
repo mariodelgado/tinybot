@@ -1,8 +1,10 @@
 /**
  * TinyFish product stack as TinyBot publishes it: unique host ports, localhost only.
  *
- * Product repos keep their native binds (8765 / 8080 / 3712). TinyBot remaps the host side so
- * one `scripts/start.sh` can run all six without collisions. Do not invent a seventh usage id.
+ * The six products are linked service dependencies, not imported packages. Do not vendor,
+ * submodule, or install their trees. Product repos keep their native binds
+ * (8765 / 8080 / 3712). TinyBot remaps the host side so one `scripts/start.sh` can run
+ * all six without collisions. Do not invent a seventh usage id.
  */
 
 export type TinyFishUsageId =

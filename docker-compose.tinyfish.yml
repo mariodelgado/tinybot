@@ -1,8 +1,9 @@
 # TinyFish products as uniquely named TinyBot services (project: tinybot-tinyfish).
 #
-# This is the host-port overlay. Product source is not vendored. Each service builds
-# from its private GitHub repo (Docker git context) and publishes a unique loopback
-# port so the six start-page cards do not share :8080 / :8765.
+# This is the host-port overlay. Product source is not vendored, submodule'd, or
+# installed. Each service builds from its private GitHub repo (Docker git context,
+# latest default branch) and publishes a unique loopback port so the six
+# start-page cards do not share :8080 / :8765.
 #
 # scripts/tinyfish/start-products.ts prefers wrapping each product's own compose
 # (sibling checkout or a gitignored .tinyfish-siblings/ clone) as its own Compose

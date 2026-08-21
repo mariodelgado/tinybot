@@ -187,10 +187,10 @@ test("start-products waits on GET /health, not a UI path", () => {
     "utf8",
   );
   expect(start).toContain("async function waitForTinyPipe");
-  expect(start).toContain("tinyFishProductHealthUrl(product)");
-  expect(start.indexOf("tinyFishProductHealthUrl(product)")).toBeLessThan(
-    start.indexOf("TinyPipe ready"),
-  );
+  expect(start).toContain("resolveProductHealthUrl(product, process.env)");
+  expect(
+    start.indexOf("resolveProductHealthUrl(product, process.env)"),
+  ).toBeLessThan(start.indexOf("TinyPipe ready"));
 });
 
 test("sibling checkouts stay outside the TinyBot tree unless cached gitignored", () => {

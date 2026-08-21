@@ -1,16 +1,20 @@
 /**
  * TinyFish product catalog shown on the TinyBot start page.
  *
- * Defaults are the remapped TinyBot host ports. Override a URL with
- * `VITE_TINYFISH_<USAGE>_URL` (for example `VITE_TINYFISH_JS_01_URL`) when a
- * process is bound somewhere else. Cards show Unreachable if that process is down.
+ * Defaults are the remapped TinyBot host ports. Override with
+ * `TINYFISH_<SLUG>_URL` or `VITE_TINYFISH_<USAGE>_URL` (Fly). Cards show
+ * Unreachable if that process is down; they still open the shell route.
  */
 
+import {
+  type EnvBag,
+  resolveProductCardUrl,
+  resolveProductHealthUrl,
+} from "./origins";
 import {
   TINYFISH_PRODUCTS,
   type TinyFishUsageId,
   tinyFishProductBySlug,
-  tinyFishProductHealthUrl,
   tinyFishProductUrl,
 } from "./stack";
 
@@ -47,37 +51,37 @@ export function tinyFishSpriteProxyPath(app: TinyFishApp): string {
   return `/api/sprite/apps/${app.slug}${path}`;
 }
 
-const ENV_URL_KEYS: Record<TinyFishUsageId, string> = {
-  "js-01": "VITE_TINYFISH_JS_01_URL",
-  "js-02": "VITE_TINYFISH_JS_02_URL",
-  "js-03": "VITE_TINYFISH_JS_03_URL",
-  "tf-01": "VITE_TINYFISH_TF_01_URL",
-  "tf-02": "VITE_TINYFISH_TF_02_URL",
-  "tf-03": "VITE_TINYFISH_TF_03_URL",
-};
-
-function envUrlOverride(usageId: TinyFishUsageId): string | undefined {
-  const key = ENV_URL_KEYS[usageId];
-  const env = (import.meta as ImportMeta & { env?: Record<string, unknown> })
+function readEnvBag(explicit?: EnvBag): EnvBag {
+  if (explicit) return explicit;
+  const vite = (import.meta as ImportMeta & { env?: Record<string, unknown> })
     .env;
-  const value = env?.[key];
-  return typeof value === "string" && value.trim().length > 0
-    ? value.trim()
-    : undefined;
+  const fromVite: EnvBag = {};
+  for (const [key, value] of Object.entries(vite ?? {})) {
+    if (typeof value === "string") {
+      fromVite[key] = value;
+    }
+  }
+  const fromProcess =
+    typeof process !== "undefined" ? (process.env as EnvBag) : {};
+  return { ...fromProcess, ...fromVite };
 }
 
 /**
  * Resolved embed URL. A signed-in Sprite assignment uses TinyBot's authenticated
- * proxy. Otherwise the remapped localhost catalog (or a VITE override).
+ * proxy. Otherwise a Fly/env override, or the remapped localhost catalog.
  */
 export function tinyFishAppUrl(
   app: TinyFishApp,
   sprite?: TinyFishSpriteHint | null,
+  env?: EnvBag,
 ): string {
   if (sprite?.url) {
     return tinyFishSpriteProxyPath(app);
   }
-  return envUrlOverride(app.usageId) ?? app.defaultUrl;
+  const product = tinyFishProductBySlug(app.slug);
+  return product
+    ? resolveProductCardUrl(product, readEnvBag(env))
+    : app.defaultUrl;
 }
 
 export function tinyFishAppBySlug(slug: string): TinyFishApp | undefined {
@@ -88,17 +92,18 @@ export function tinyFishAppPath(app: TinyFishApp): `/apps/${string}` {
   return `/apps/${app.slug}`;
 }
 
-/** Card / wait probe: GET /health on the remapped host port, not the UI path. */
+/** Card / wait probe: GET /health on the origin (Fly override or remapped host). */
 export function tinyFishAppHealthUrl(
   app: TinyFishApp,
   sprite?: TinyFishSpriteHint | null,
+  env?: EnvBag,
 ): string {
   if (sprite?.url) {
     return `/api/sprite/apps/${app.slug}/health`;
   }
   const product = tinyFishProductBySlug(app.slug);
   return product
-    ? tinyFishProductHealthUrl(product)
+    ? resolveProductHealthUrl(product, readEnvBag(env))
     : `http://127.0.0.1/${app.slug}/health`;
 }
 

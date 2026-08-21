@@ -5,17 +5,23 @@ import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { storedTinyFishCredential } from "@/lib/auth/client";
 import { currentUserQueryOptions } from "@/lib/auth/queries";
-import { type TinyFishApp, tinyFishAppUrl } from "@/lib/tinyfish/apps";
+import {
+  type TinyFishApp,
+  tinyFishAppHealthUrl,
+  tinyFishAppUrl,
+} from "@/lib/tinyfish/apps";
 import { useTinyFishReachability } from "@/lib/tinyfish/use-reachability";
 
 /**
  * In-app webview for a TinyFish product. With a per-user Sprite the iframe loads
- * TinyBot's authenticated proxy; otherwise the remapped localhost catalog.
+ * TinyBot's authenticated proxy; otherwise a Fly/env URL or the remapped catalog.
  */
 export function TinyFishAppFrame({ app }: { app: TinyFishApp }) {
   const { data: currentUser } = useQuery(currentUserQueryOptions());
   const url = tinyFishAppUrl(app, currentUser?.sprite);
-  const reachability = useTinyFishReachability(url);
+  const reachability = useTinyFishReachability(
+    tinyFishAppHealthUrl(app, currentUser?.sprite),
+  );
   const frameRef = useRef<HTMLIFrameElement>(null);
 
   return (

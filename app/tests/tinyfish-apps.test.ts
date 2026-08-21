@@ -89,7 +89,7 @@ describe("TinyFish start-page catalog", () => {
     if (!tinypipe || !tinytail) {
       throw new Error("catalog is missing products");
     }
-    expect(tinyFishAppUrl(tinypipe)).toBe("http://127.0.0.1:3712/ui");
+    expect(tinyFishAppUrl(tinypipe, null, {})).toBe("http://127.0.0.1:3712/ui");
     expect(
       tinyFishAppUrl(tinypipe, {
         url: "https://tinybot-tfu-alice-org.sprites.app",
@@ -109,11 +109,13 @@ describe("TinyFish start-page catalog", () => {
     if (!tinypipe || !tinytail || !tinywatch) {
       throw new Error("catalog is missing products");
     }
-    expect(tinyFishAppHealthUrl(tinypipe)).toBe("http://127.0.0.1:3712/health");
-    expect(tinyFishAppHealthUrl(tinytail)).toBe(
+    expect(tinyFishAppHealthUrl(tinypipe, null, {})).toBe(
+      "http://127.0.0.1:3712/health",
+    );
+    expect(tinyFishAppHealthUrl(tinytail, null, {})).toBe(
       "http://127.0.0.1:18765/health",
     );
-    expect(tinyFishAppHealthUrl(tinywatch)).toBe(
+    expect(tinyFishAppHealthUrl(tinywatch, null, {})).toBe(
       "http://127.0.0.1:18081/health",
     );
     expect(
@@ -129,5 +131,23 @@ describe("TinyFish start-page catalog", () => {
       "/api/products/tinytail/v1/as-of",
     );
     expect(tinyFishProductApiPath("tinykit")).toBe("/api/products/tinykit/");
+  });
+
+  test("Fly / env overrides replace localhost remap on cards and health", () => {
+    const tinypipe = tinyFishAppBySlug("tinypipe");
+    if (!tinypipe) throw new Error("catalog is missing tinypipe");
+    const env = { TINYFISH_TINYPIPE_URL: "https://tf-tinypipe.fly.dev" };
+    expect(tinyFishAppUrl(tinypipe, null, env)).toBe(
+      "https://tf-tinypipe.fly.dev/ui",
+    );
+    expect(tinyFishAppHealthUrl(tinypipe, null, env)).toBe(
+      "https://tf-tinypipe.fly.dev/health",
+    );
+    expect(
+      tinyFishAppUrl(tinypipe, null, {
+        VITE_TINYFISH_TF_03_URL: "https://tf-tinypipe.fly.dev/ui",
+      }),
+    ).toBe("https://tf-tinypipe.fly.dev/ui");
+    expect(tinyFishAppUrl(tinypipe, null, {})).toBe("http://127.0.0.1:3712/ui");
   });
 });

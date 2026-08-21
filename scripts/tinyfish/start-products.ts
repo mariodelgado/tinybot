@@ -1,28 +1,40 @@
 /**
  * Start the six TinyFish products with unique host ports. TinyPipe is first.
  *
- * Preferred: wrap each product's own compose after a sibling checkout or a
- * gitignored `.tinyfish-siblings/` clone. Fallback: `docker-compose.tinyfish.yml`
- * git-context builds. Product source is never committed into TinyBot.
+ * Products are linked services. Preferred: wrap each product's own compose
+ * after fetching the latest default branch (or consume-contract PR) into a
+ * sibling checkout or gitignored `.tinyfish-siblings/` clone. Fallback:
+ * `docker-compose.tinyfish.yml` git-context builds. Never copy product files
+ * into the TinyBot tree.
  */
 
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { stringify as stringifyYaml } from "yaml";
 import {
+  isRemoteProductUrl,
+  productUrlOverride,
+  resolveProductCardUrl,
+  resolveProductHealthUrl,
+} from "../../app/src/lib/tinyfish/origins";
+import {
   productsInStartOrder,
   TINYFISH_FIXTURE_ISSUER,
   TINYPIPE_MCP_URL,
   type TinyFishProduct,
-  tinyFishProductHealthUrl,
-  tinyFishProductUrl,
 } from "../../app/src/lib/tinyfish/stack";
+import {
+  createGhProductRepoClient,
+  isGitRepo,
+  isOwnedSiblingCache,
+  resolveProductCheckoutRef,
+  siblingCacheDir,
+} from "./latest";
 import {
   COMPOSE_FILE_PAIRS,
   type ComposeService,
   candidateCheckoutDirs,
   remapComposeServices,
-  siblingRepoDirName,
 } from "./ports";
 
 const ROOT = resolve(import.meta.dir, "../..");
@@ -74,29 +86,121 @@ function existingCheckout(product: TinyFishProduct): string | undefined {
   return undefined;
 }
 
-async function cloneSibling(
-  product: TinyFishProduct,
-): Promise<string | undefined> {
-  const dest = join(SIBLINGS, siblingRepoDirName(product.repo));
-  if (existsSync(dest) && findComposeFiles(dest).length > 0) {
-    return dest;
+function gitEnv(): Record<string, string> {
+  return {
+    ...process.env,
+    GIT_ASKPASS: ASKPASS,
+    GIT_TERMINAL_PROMPT: "0",
+  } as Record<string, string>;
+}
+
+async function runCommand(
+  command: string[],
+  options: { cwd?: string; inherit?: boolean } = {},
+): Promise<{ ok: boolean; stdout: string; stderr: string }> {
+  const proc = Bun.spawn(command, {
+    cwd: options.cwd ?? ROOT,
+    stdout: options.inherit ? "inherit" : "pipe",
+    stderr: options.inherit ? "inherit" : "pipe",
+    env: gitEnv(),
+  });
+  const stdout = options.inherit ? "" : await new Response(proc.stdout).text();
+  const stderr = options.inherit ? "" : await new Response(proc.stderr).text();
+  const ok = (await proc.exited) === 0;
+  return { ok, stdout, stderr };
+}
+
+const productRepoClient = createGhProductRepoClient({
+  run: (args, extra) => runCommand(["gh", ...args], { cwd: extra?.cwd }),
+});
+
+async function fetchLatestRef(
+  dir: string,
+  ref: string,
+  reset: boolean,
+): Promise<boolean> {
+  const fetched = await runCommand(
+    ["git", "fetch", "--depth", "1", "origin", ref],
+    { cwd: dir },
+  );
+  if (!fetched.ok) {
+    return false;
   }
-  mkdirSync(SIBLINGS, { recursive: true });
-  info(`  cloning ${product.repo} into .tinyfish-siblings/ (not committed)`);
-  const proc = Bun.spawn(
-    ["gh", "repo", "clone", product.repo, dest, "--", "--depth", "1"],
+  if (reset) {
+    const checkout = await runCommand(
+      ["git", "checkout", "-f", "-B", ref, `origin/${ref}`],
+      { cwd: dir },
+    );
+    return checkout.ok;
+  }
+  const current = await runCommand(
+    ["git", "rev-parse", "--abbrev-ref", "HEAD"],
     {
-      cwd: ROOT,
-      stdout: "inherit",
-      stderr: "inherit",
-      env: { ...process.env, GIT_ASKPASS: ASKPASS, GIT_TERMINAL_PROMPT: "0" },
+      cwd: dir,
     },
   );
-  const status = await proc.exited;
-  if (status !== 0 || findComposeFiles(dest).length === 0) {
+  if (current.stdout.trim() !== ref) {
+    return true;
+  }
+  await runCommand(["git", "merge", "--ff-only", `origin/${ref}`], {
+    cwd: dir,
+  });
+  return true;
+}
+
+async function cloneLatest(
+  product: TinyFishProduct,
+  ref: string,
+): Promise<string | undefined> {
+  const dest = siblingCacheDir(ROOT, product.repo);
+  mkdirSync(SIBLINGS, { recursive: true });
+  info(
+    `  cloning latest ${product.repo}@${ref} into .tinyfish-siblings/ (not committed)`,
+  );
+  const cloned = await runCommand(
+    [
+      "gh",
+      "repo",
+      "clone",
+      product.repo,
+      dest,
+      "--",
+      "--depth",
+      "1",
+      "--branch",
+      ref,
+    ],
+    { inherit: true },
+  );
+  if (!cloned.ok || findComposeFiles(dest).length === 0) {
     return undefined;
   }
   return dest;
+}
+
+async function ensureLatestCheckout(
+  product: TinyFishProduct,
+): Promise<string | undefined> {
+  const choice = await resolveProductCheckoutRef(
+    product.repo,
+    productRepoClient,
+  );
+  const existing = existingCheckout(product);
+  if (existing && isGitRepo(existing)) {
+    const reset = isOwnedSiblingCache(existing, ROOT, process.env);
+    const refreshed = await fetchLatestRef(existing, choice.ref, reset);
+    if (refreshed || findComposeFiles(existing).length > 0) {
+      info(
+        `  ${product.title}: ${choice.source} ${choice.ref} in ${existing}${reset ? " (reset)" : ""}`,
+      );
+      return existing;
+    }
+  } else if (existing) {
+    info(`  ${product.title}: existing checkout ${existing} (not a git repo)`);
+    return existing;
+  }
+
+  return cloneLatest(product, choice.ref);
 }
 
 async function dockerCompose(
@@ -247,7 +351,7 @@ async function startOverlayService(product: TinyFishProduct): Promise<boolean> {
 }
 
 async function waitForTinyPipe(product: TinyFishProduct) {
-  const url = tinyFishProductHealthUrl(product);
+  const url = resolveProductHealthUrl(product, process.env);
   info(`  waiting for TinyPipe GET ${url} (auth socket ${TINYPIPE_MCP_URL})`);
   for (let attempt = 0; attempt < 60; attempt += 1) {
     try {
@@ -266,11 +370,19 @@ async function waitForTinyPipe(product: TinyFishProduct) {
   );
 }
 
+function usesRemoteUrl(product: TinyFishProduct): boolean {
+  return isRemoteProductUrl(productUrlOverride(product, process.env));
+}
+
 async function startProduct(product: TinyFishProduct): Promise<void> {
-  let checkout = existingCheckout(product);
-  if (!checkout) {
-    checkout = await cloneSibling(product);
+  if (usesRemoteUrl(product)) {
+    const origin = productUrlOverride(product, process.env);
+    info(
+      `  ${product.title}: ${origin} (linked service; not starting locally)`,
+    );
+    return;
   }
+  const checkout = await ensureLatestCheckout(product);
   if (checkout) {
     const files = findComposeFiles(checkout);
     if (files.length > 0 && (await startWrapped(product, checkout, files))) {
@@ -281,7 +393,7 @@ async function startProduct(product: TinyFishProduct): Promise<void> {
     return;
   }
   fail(
-    `${product.title} did not start. Need Docker plus GitHub access to ${product.repo} (sibling checkout, gh clone into .tinyfish-siblings/, or git-context build).`,
+    `${product.title} did not start. Need Docker plus GitHub access to ${product.repo} (sibling checkout, latest clone into .tinyfish-siblings/, or git-context build).`,
   );
 }
 
@@ -306,23 +418,31 @@ async function main() {
     info("Skipping TinyFish products (OPENBOT_SKIP_TINYFISH_PRODUCTS=1).");
     return;
   }
-  if (!hasDocker()) {
+
+  const local = productsInStartOrder().filter(
+    (product) => !usesRemoteUrl(product),
+  );
+  if (local.length === 0) {
+    info(
+      "All six products have TINYFISH_<SLUG>_URL / VITE_TINYFISH_<USAGE>_URL; not starting local compose.",
+    );
+  } else if (!hasDocker()) {
     fail(
-      "Docker is required to start TinyPipe and the five sibling products. Install Docker, or set OPENBOT_SKIP_TINYFISH_PRODUCTS=1 to start TinyBot only.",
+      "Docker is required to start TinyPipe and the five sibling products. Install Docker, or set OPENBOT_SKIP_TINYFISH_PRODUCTS=1 to start TinyBot only, or point TINYFISH_<SLUG>_URL at Fly.",
     );
   }
 
-  info("TinyFish products (TinyPipe first)");
+  info("TinyFish products (TinyPipe first; latest checkout, not vendored)");
   for (const product of productsInStartOrder()) {
     await startProduct(product);
-    if (product.usageId === "tf-03") {
+    if (product.usageId === "tf-03" && !usesRemoteUrl(product)) {
       await waitForTinyPipe(product);
     }
   }
 
   info("Card URLs:");
   for (const product of productsInStartOrder()) {
-    info(`  ${product.title}: ${tinyFishProductUrl(product)}`);
+    info(`  ${product.title}: ${resolveProductCardUrl(product, process.env)}`);
   }
 }
 

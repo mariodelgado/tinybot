@@ -119,7 +119,7 @@ A second `tfk.alice` reuses `tfu_alice`. The session cookie binds to that profil
 
 ## TinyFish products
 
-Catalog defaults live in `app/src/lib/tinyfish/stack.ts` (host ports TinyBot publishes) and stay on localhost. Product repos keep their native binds; TinyBot remaps the host side onto the named compose service (`ltdf`, `feed`, `tinyfish-web`, `engine`, `gallery`). Override a card URL with `VITE_TINYFISH_<USAGE>_URL` if needed. Cards probe `GET /health` on the remapped host port and may show **Unreachable** if that service is down; they still open the shell route.
+The six products are linked services, not packages. Catalog defaults live in `app/src/lib/tinyfish/stack.ts` (host ports TinyBot publishes) and stay on localhost unless `TINYFISH_<SLUG>_URL` or `VITE_TINYFISH_<USAGE>_URL` points at Fly. Product repos keep their native binds; TinyBot remaps the host side onto the named compose service (`ltdf`, `feed`, `tinyfish-web`, `engine`, `gallery`) after fetching latest product code into a gitignored sibling clone. Cards probe `GET /health` and may show **Unreachable** if that service is down; they still open the shell route.
 
 When there is no Sprite, TinyBot consumes each backend at `/api/products/<slug>/*` (TinyPipe `POST /mcp` first, TinyTail `/v1/as-of`, other slugs pass the path through). See [TINYBOT.md](TINYBOT.md).
 

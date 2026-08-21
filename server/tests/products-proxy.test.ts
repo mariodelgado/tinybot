@@ -30,7 +30,10 @@ function fixtureVerifier() {
   };
 }
 
-function appWithProducts(fetchImpl: typeof fetch) {
+function appWithProducts(
+  fetchImpl: typeof fetch,
+  env?: Record<string, string | undefined>,
+) {
   const profiles = createMemoryTinyFishProfileStore();
   const service = createTinyFishAuthService({
     verifier: fixtureVerifier(),
@@ -65,7 +68,7 @@ function appWithProducts(fetchImpl: typeof fetch) {
     undefined,
     service,
     undefined,
-    { fetch: fetchImpl },
+    { fetch: fetchImpl, ...(env ? { env } : {}) },
   );
   return { app, service };
 }
@@ -112,6 +115,19 @@ describe("local product upstream", () => {
   test("unknown slug has no upstream", () => {
     expect(localProductUpstream("tinyseventh", "/health")).toBeUndefined();
     expect(localProductUpstream("openbot", "/")).toBeUndefined();
+  });
+
+  test("TINYFISH_<SLUG>_URL / VITE_TINYFISH_<USAGE>_URL replace the loopback origin", () => {
+    expect(
+      localProductUpstream("tinypipe", "/mcp", "", {
+        TINYFISH_TINYPIPE_URL: "https://tf-tinypipe.fly.dev",
+      })?.href,
+    ).toBe("https://tf-tinypipe.fly.dev/mcp");
+    expect(
+      localProductUpstream("tinytail", "/v1/as-of", "", {
+        VITE_TINYFISH_JS_01_URL: "https://tf-tinytail.fly.dev",
+      })?.href,
+    ).toBe("https://tf-tinytail.fly.dev/v1/as-of");
   });
 });
 
@@ -190,6 +206,49 @@ describe("product API proxy", () => {
     );
     expect(response.status).toBe(200);
     expect(urls).toEqual(["http://127.0.0.1:18765/v1/as-of"]);
+  });
+
+  test("TINYFISH_<SLUG>_URL sends the proxy to Fly, not localhost", async () => {
+    const calls: { url: string; authorization?: string | null }[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      const url = String(input);
+      if (url.includes("127.0.0.1")) {
+        throw new Error("Fly override must not fall back to localhost");
+      }
+      const headers = new Headers(init?.headers);
+      calls.push({ url, authorization: headers.get("authorization") });
+      return new Response("ok", { status: 200 });
+    };
+    const { app } = appWithProducts(fetchImpl, {
+      TINYFISH_TINYPIPE_URL: "https://tf-tinypipe.fly.dev",
+    });
+    const signed = await signIn(app, "tfk.alice");
+    const response = await app.request(
+      "http://openbot.local/api/products/tinypipe/mcp",
+      {
+        method: "POST",
+        headers: {
+          cookie: cookieFrom(signed),
+          "content-type": "application/json",
+        },
+        body: "{}",
+      },
+    );
+    expect(response.status).toBe(200);
+    expect(calls[0]?.url).toBe("https://tf-tinypipe.fly.dev/mcp");
+    expect(calls[0]?.authorization).toBe("Bearer tfk.alice");
+  });
+
+  test("an unreachable Fly origin is 502, not a thrown failure", async () => {
+    const { app } = appWithProducts(async () => {
+      throw new Error("tf-tinypipe.fly.dev is not live yet");
+    });
+    const signed = await signIn(app, "tfk.alice");
+    const response = await app.request(
+      "http://openbot.local/api/products/tinypipe/health",
+      { headers: { cookie: cookieFrom(signed) } },
+    );
+    expect(response.status).toBe(502);
   });
 });
 

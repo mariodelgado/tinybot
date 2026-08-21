@@ -111,6 +111,18 @@ ensure_setting TINYFISH_MCP_URL "http://127.0.0.1:3712/mcp"
 ensure_setting TINYFISH_ISSUER "https://issuer.fixtures.tinyfish.test"
 export TINYFISH_MCP_URL="$(setting TINYFISH_MCP_URL http://127.0.0.1:3712/mcp)"
 export TINYFISH_ISSUER="$(setting TINYFISH_ISSUER https://issuer.fixtures.tinyfish.test)"
+for _tf_url_key in \
+  TINYFISH_TINYPIPE_URL TINYFISH_TINYTAIL_URL TINYFISH_TINYPULSE_URL \
+  TINYFISH_TINYWEB_URL TINYFISH_TINYWATCH_URL TINYFISH_TINYKIT_URL \
+  VITE_TINYFISH_TF_03_URL VITE_TINYFISH_JS_01_URL VITE_TINYFISH_JS_02_URL \
+  VITE_TINYFISH_JS_03_URL VITE_TINYFISH_TF_01_URL VITE_TINYFISH_TF_02_URL
+do
+  _tf_url_val="$(setting "$_tf_url_key" "")"
+  if [ -n "$_tf_url_val" ]; then
+    export "${_tf_url_key}=${_tf_url_val}"
+  fi
+done
+unset _tf_url_key _tf_url_val
 if [ "${OPENBOT_SKIP_TINYFISH_PRODUCTS:-}" = "1" ]; then
   info "  skipped (OPENBOT_SKIP_TINYFISH_PRODUCTS=1). Cards show Unreachable until the six are up."
 else

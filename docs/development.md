@@ -29,7 +29,7 @@ bash scripts/start.sh
 
 ## Running services
 
-Use `bash scripts/start.sh` for the full local stack. It starts TinyPipe first, then the other five TinyFish products on unique host ports, then TinyBot Docker services, migrations, the API server and app, and verifies health routes. TinyPipe must be healthy before TinyFish sign-in and the start-page cards work. Leave `SPRITES_TOKEN` / `SPRITE_TOKEN` unset for this path. Set either only when you want per-user Fly Sprites instead of the shared localhost products.
+Use `bash scripts/start.sh` for the full local stack. It starts TinyPipe first, then the other five TinyFish products on unique host ports (latest product compose, not vendored source), then TinyBot Docker services, migrations, the API server and app, and verifies health routes. TinyPipe must be healthy before TinyFish sign-in and the start-page cards work. Leave `SPRITES_TOKEN` / `SPRITE_TOKEN` unset for this path. Set `TINYFISH_<SLUG>_URL` / `VITE_TINYFISH_<USAGE>_URL` to point cards and `/api/products` at Fly Machines instead of localhost remap.
 
 Use `bun run dev` only when you want the app and API server without starting the Docker Bots and computers.
 

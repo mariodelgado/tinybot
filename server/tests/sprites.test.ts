@@ -319,7 +319,7 @@ describe("Sprite provision on TinyFish sign-in", () => {
       (appItem) => appItem.slug === "tinypipe",
     );
     if (!tinypipe) throw new Error("tinypipe missing");
-    expect(tinyFishAppUrl(tinypipe)).toBe("http://127.0.0.1:3712/ui");
+    expect(tinyFishAppUrl(tinypipe, null, {})).toBe("http://127.0.0.1:3712/ui");
     expect(tinyFishAppUrl(tinypipe, { url: "https://x.sprites.app" })).toBe(
       "/api/sprite/apps/tinypipe/ui",
     );

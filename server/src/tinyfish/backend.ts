@@ -46,7 +46,12 @@ export async function callProductBackend(
   const fallback = DEFAULT_CALL[input.slug] ?? { path: "/", method: "GET" };
   const path = input.path?.trim() || fallback.path;
   const method = (input.method?.trim() || fallback.method).toUpperCase();
-  const upstream = localProductUpstream(input.slug, path, input.query ?? "");
+  const upstream = localProductUpstream(
+    input.slug,
+    path,
+    input.query ?? "",
+    process.env,
+  );
   if (!upstream) {
     return { status: 404, text: "Unknown TinyFish product." };
   }
