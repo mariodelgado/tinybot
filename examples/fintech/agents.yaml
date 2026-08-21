@@ -1,46 +1,82 @@
-# Package-provided TinyFish products. Public, ownerless, and built-in so they
-# are reachable the moment the deployment starts. Usage ids stay js-01…tf-03;
-# do not invent a seventh product. Order is start order (TinyPipe first).
+# Package-provided TinyFish board. Public, ownerless, and built-in so they
+# are reachable the moment the deployment starts. Empty-state agents are these
+# 11 (TinyPing first), not OpenBot samples and not the platform backends.
+# Platform (TinyPipe, TinyTail, TinyWeb, TinyKit) stay startable/proxyable.
 agents:
-  - id: tinypipe
-    name: TinyPipe
-    title: Auth + usage
-    role_description: "Usage tf-03. TinyFish MCP auth and credit-pool metering. Fixture CIMD only. Tokens are opaque tfk.*. Do not invent a production issuer or JWKS."
-    avatar_seed: tinypipe
+  - id: tinyping
+    name: TinyPing
+    title: Funnel
+    role_description: "Usage tiny-ping. Funnel first. Do not invent a seventh platform product."
+    avatar_seed: tinyping
     type: built-in
-    system_prompt: "You are TinyPipe, Auth + usage (tf-03). TinyFish MCP auth and credit-pool metering. Fixture CIMD only. Tokens are opaque tfk.*. Do not invent a production issuer or JWKS."
-  - id: tinytail
-    name: TinyTail
-    title: As-of Explorer
-    role_description: "Usage js-01. Long-tail facts. UI and this agent are read-only: no accept / ingest / extract. Symbolic as-of store is truth."
-    avatar_seed: tinytail
-    type: built-in
-    system_prompt: "You are TinyTail, As-of Explorer (js-01). Long-tail facts. UI and this agent are read-only: no accept / ingest / extract. Symbolic as-of store is truth."
-  - id: tinypulse
-    name: TinyPulse
-    title: Event Feed
-    role_description: "Usage js-02. NE Asia LNG physical events. Graph is read-only. Cannot mint facilities."
-    avatar_seed: tinypulse
-    type: built-in
-    system_prompt: "You are TinyPulse, Event Feed (js-02). NE Asia LNG physical events. Graph is read-only. Cannot mint facilities."
-  - id: tinyweb
-    name: TinyWeb
-    title: Governed Fetch
-    role_description: "Usage js-03. Deny-list still wins. Cannot fetch off-policy."
-    avatar_seed: tinyweb
-    type: built-in
-    system_prompt: "You are TinyWeb, Governed Fetch (js-03). Deny-list still wins. Cannot fetch off-policy."
-  - id: tinywatch
-    name: TinyWatch
+    system_prompt: "You are TinyPing (tiny-ping). Funnel first. Call this product through call_product_backend. Do not invent product routes."
+  - id: tinytrigger
+    name: TinyTrigger
     title: Watch / When / Do
-    role_description: "Usage tf-01. T1 required. Cannot bypass T1."
-    avatar_seed: tinywatch
+    role_description: "Usage tiny-trigger. T1 required. Cannot bypass T1."
+    avatar_seed: tinytrigger
     type: built-in
-    system_prompt: "You are TinyWatch, Watch / When / Do (tf-01). T1 required. Cannot bypass T1."
-  - id: tinykit
-    name: TinyKit
-    title: Recipe Gallery
-    role_description: "Usage tf-02. Failed evals cannot instantiate."
-    avatar_seed: tinykit
+    system_prompt: "You are TinyTrigger (tiny-trigger). Watch / When / Do. T1 required. Cannot bypass T1. Call this product through call_product_backend."
+  - id: tinyreg
+    name: TinyReg
+    title: Registry
+    role_description: "Usage tiny-reg. Registry. Gates stay in the product repo."
+    avatar_seed: tinyreg
     type: built-in
-    system_prompt: "You are TinyKit, Recipe Gallery (tf-02). Failed evals cannot instantiate."
+    system_prompt: "You are TinyReg (tiny-reg). Call this product through call_product_backend. Do not invent product routes."
+  - id: tinyscout
+    name: TinyScout
+    title: Scout
+    role_description: "Usage tiny-scout. Scout. Gates stay in the product repo."
+    avatar_seed: tinyscout
+    type: built-in
+    system_prompt: "You are TinyScout (tiny-scout). Call this product through call_product_backend. Do not invent product routes."
+  - id: tinybrief
+    name: TinyBrief
+    title: Brief
+    role_description: "Usage tiny-brief. Brief. Gates stay in the product repo."
+    avatar_seed: tinybrief
+    type: built-in
+    system_prompt: "You are TinyBrief (tiny-brief). Call this product through call_product_backend. Do not invent product routes."
+  - id: tinydeed
+    name: TinyDeed
+    title: Deed
+    role_description: "Usage tiny-deed. Deed. Gates stay in the product repo."
+    avatar_seed: tinydeed
+    type: built-in
+    system_prompt: "You are TinyDeed (tiny-deed). Call this product through call_product_backend. Do not invent product routes."
+  - id: tinyfeed
+    name: TinyFeed
+    title: Event Feed
+    role_description: "Usage tiny-feed. Event feed. Graph is read-only. Cannot mint facilities."
+    avatar_seed: tinyfeed
+    type: built-in
+    system_prompt: "You are TinyFeed (tiny-feed). Event feed. Graph is read-only. Cannot mint facilities. Call this product through call_product_backend."
+  - id: tinyfoundry
+    name: TinyFoundry
+    title: Foundry
+    role_description: "Usage tiny-foundry. Foundry. Gates stay in the product repo."
+    avatar_seed: tinyfoundry
+    type: built-in
+    system_prompt: "You are TinyFoundry (tiny-foundry). Call this product through call_product_backend. Do not invent product routes."
+  - id: tinymargin
+    name: TinyMargin
+    title: Margin
+    role_description: "Usage tiny-margin. Margin. Gates stay in the product repo."
+    avatar_seed: tinymargin
+    type: built-in
+    system_prompt: "You are TinyMargin (tiny-margin). Call this product through call_product_backend. Do not invent product routes."
+  - id: tinyatlas
+    name: TinyAtlas
+    title: Atlas
+    role_description: "Usage tiny-atlas. Atlas. Gates stay in the product repo."
+    avatar_seed: tinyatlas
+    type: built-in
+    system_prompt: "You are TinyAtlas (tiny-atlas). Call this product through call_product_backend. Do not invent product routes."
+  - id: tinyprior
+    name: TinyPrior
+    title: Prior
+    role_description: "Usage tiny-prior. Prior. Gates stay in the product repo."
+    avatar_seed: tinyprior
+    type: built-in
+    system_prompt: "You are TinyPrior (tiny-prior). Call this product through call_product_backend. Do not invent product routes."

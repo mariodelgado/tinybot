@@ -98,14 +98,17 @@ describe("local product upstream", () => {
     expect(localProductUpstream("tinytail", "/v1/as-of")?.href).toBe(
       "http://127.0.0.1:18765/v1/as-of",
     );
-    expect(localProductUpstream("tinypulse", "/health")?.href).toBe(
+    expect(localProductUpstream("tinyfeed", "/health")?.href).toBe(
       "http://127.0.0.1:18082/health",
     );
     expect(localProductUpstream("tinyweb", "/health")?.href).toBe(
       "http://127.0.0.1:18766/health",
     );
-    expect(localProductUpstream("tinywatch", "/health")?.href).toBe(
+    expect(localProductUpstream("tinytrigger", "/health")?.href).toBe(
       "http://127.0.0.1:18081/health",
+    );
+    expect(localProductUpstream("tinyping", "/health")?.href).toBe(
+      "http://127.0.0.1:18101/health",
     );
     expect(localProductUpstream("tinykit", "/health")?.href).toBe(
       "http://127.0.0.1:18083/health",
@@ -314,9 +317,14 @@ describe("product backend client", () => {
     expect(called).toBe(false);
   });
 
-  test("only the six built-in slugs get the product-backend tool", () => {
+  test("board and platform slugs get the product-backend tool", () => {
     expect(
       productBackendTools({ botId: "tinypipe", actorId: "tfu_alice" }).map(
+        (tool) => tool.name,
+      ),
+    ).toEqual(["call_product_backend"]);
+    expect(
+      productBackendTools({ botId: "tinyping", actorId: "tfu_alice" }).map(
         (tool) => tool.name,
       ),
     ).toEqual(["call_product_backend"]);

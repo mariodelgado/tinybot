@@ -315,13 +315,13 @@ describe("Sprite provision on TinyFish sign-in", () => {
     expect(body.user.sprite).toBeUndefined();
     expect(called).toBe(false);
 
-    const tinypipe = TINYFISH_APPS.find(
-      (appItem) => appItem.slug === "tinypipe",
+    const tinyping = TINYFISH_APPS.find(
+      (appItem) => appItem.slug === "tinyping",
     );
-    if (!tinypipe) throw new Error("tinypipe missing");
-    expect(tinyFishAppUrl(tinypipe, null, {})).toBe("http://127.0.0.1:3712/ui");
-    expect(tinyFishAppUrl(tinypipe, { url: "https://x.sprites.app" })).toBe(
-      "/api/sprite/apps/tinypipe/ui",
+    if (!tinyping) throw new Error("tinyping missing");
+    expect(tinyFishAppUrl(tinyping, null, {})).toBe("http://127.0.0.1:18101/ui");
+    expect(tinyFishAppUrl(tinyping, { url: "https://x.sprites.app" })).toBe(
+      "/api/sprite/apps/tinyping/ui",
     );
   });
 });

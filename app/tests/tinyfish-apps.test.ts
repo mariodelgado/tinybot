@@ -11,71 +11,102 @@ import {
 
 const expected = [
   {
-    usageId: "js-01" as const,
-    slug: "tinytail",
-    title: "TinyTail",
-    oneLiner: "As-of Explorer — long-tail facts, read-only",
-    defaultUrl: "http://127.0.0.1:18765/ui",
+    usageId: "tiny-ping" as const,
+    slug: "tinyping",
+    title: "TinyPing",
+    defaultUrl: "http://127.0.0.1:18101/ui",
   },
   {
-    usageId: "js-02" as const,
-    slug: "tinypulse",
-    title: "TinyPulse",
-    oneLiner: "Event Feed — NE Asia LNG, graph is read-only",
-    defaultUrl: "http://127.0.0.1:18082/ui",
-  },
-  {
-    usageId: "js-03" as const,
-    slug: "tinyweb",
-    title: "TinyWeb",
-    oneLiner: "Governed Fetch — deny-list still wins",
-    defaultUrl: "http://127.0.0.1:18766/ui",
-  },
-  {
-    usageId: "tf-01" as const,
-    slug: "tinywatch",
-    title: "TinyWatch",
-    oneLiner: "Watch / When / Do — T1 required",
+    usageId: "tiny-trigger" as const,
+    slug: "tinytrigger",
+    title: "TinyTrigger",
     defaultUrl: "http://127.0.0.1:18081/",
   },
   {
-    usageId: "tf-02" as const,
-    slug: "tinykit",
-    title: "TinyKit",
-    oneLiner: "Recipe Gallery — failed evals cannot instantiate",
-    defaultUrl: "http://127.0.0.1:18083/",
+    usageId: "tiny-reg" as const,
+    slug: "tinyreg",
+    title: "TinyReg",
+    defaultUrl: "http://127.0.0.1:18102/ui",
   },
   {
-    usageId: "tf-03" as const,
-    slug: "tinypipe",
-    title: "TinyPipe",
-    oneLiner: "Auth + usage console — fixture CIMD, credit pool",
-    defaultUrl: "http://127.0.0.1:3712/ui",
+    usageId: "tiny-scout" as const,
+    slug: "tinyscout",
+    title: "TinyScout",
+    defaultUrl: "http://127.0.0.1:18103/ui",
+  },
+  {
+    usageId: "tiny-brief" as const,
+    slug: "tinybrief",
+    title: "TinyBrief",
+    defaultUrl: "http://127.0.0.1:18104/ui",
+  },
+  {
+    usageId: "tiny-deed" as const,
+    slug: "tinydeed",
+    title: "TinyDeed",
+    defaultUrl: "http://127.0.0.1:18105/ui",
+  },
+  {
+    usageId: "tiny-feed" as const,
+    slug: "tinyfeed",
+    title: "TinyFeed",
+    defaultUrl: "http://127.0.0.1:18082/ui",
+  },
+  {
+    usageId: "tiny-foundry" as const,
+    slug: "tinyfoundry",
+    title: "TinyFoundry",
+    defaultUrl: "http://127.0.0.1:18106/ui",
+  },
+  {
+    usageId: "tiny-margin" as const,
+    slug: "tinymargin",
+    title: "TinyMargin",
+    defaultUrl: "http://127.0.0.1:18107/ui",
+  },
+  {
+    usageId: "tiny-atlas" as const,
+    slug: "tinyatlas",
+    title: "TinyAtlas",
+    defaultUrl: "http://127.0.0.1:18108/ui",
+  },
+  {
+    usageId: "tiny-prior" as const,
+    slug: "tinyprior",
+    title: "TinyPrior",
+    defaultUrl: "http://127.0.0.1:18109/ui",
   },
 ];
 
 describe("TinyFish start-page catalog", () => {
-  test("has exactly these six products with those default URLs", () => {
-    expect(TINYFISH_APPS).toHaveLength(6);
-    expect(TINYFISH_APPS.map((app) => app.usageId)).toEqual(
-      expected.map((app) => app.usageId),
+  test("has the 11 board products, TinyPing first, and no platform cards", () => {
+    expect(TINYFISH_APPS).toHaveLength(11);
+    expect(TINYFISH_APPS.map((app) => app.slug)).toEqual(
+      expected.map((app) => app.slug),
     );
+    expect(TINYFISH_APPS[0]?.slug).toBe("tinyping");
 
     for (const [index, app] of TINYFISH_APPS.entries()) {
       expect(app.title).toBe(expected[index].title);
-      expect(app.oneLiner).toBe(expected[index].oneLiner);
       expect(app.defaultUrl).toBe(expected[index].defaultUrl);
       expect(app.slug).toBe(expected[index].slug);
       expect(app.usageId).toBe(expected[index].usageId);
     }
 
+    expect(tinyFishAppBySlug("tinypipe")).toBeUndefined();
+    expect(tinyFishAppBySlug("tinytail")).toBeUndefined();
+    expect(tinyFishAppBySlug("tinyweb")).toBeUndefined();
+    expect(tinyFishAppBySlug("tinykit")).toBeUndefined();
+    expect(tinyFishAppBySlug("tinywatch")).toBeUndefined();
+    expect(tinyFishAppBySlug("tinypulse")).toBeUndefined();
+
     const usageIds = new Set<TinyFishUsageId>(
       TINYFISH_APPS.map((app) => app.usageId),
     );
-    expect(usageIds.size).toBe(6);
+    expect(usageIds.size).toBe(11);
   });
 
-  test("maps each product onto an in-app /apps/$product route", () => {
+  test("maps each board product onto an in-app /apps/$product route", () => {
     for (const app of TINYFISH_APPS) {
       expect(tinyFishAppBySlug(app.slug)).toEqual(app);
       expect(tinyFishAppPath(app)).toBe(`/apps/${app.slug}`);
@@ -84,70 +115,72 @@ describe("TinyFish start-page catalog", () => {
   });
 
   test("uses the TinyBot proxy path when a Sprite URL is present", () => {
-    const tinypipe = tinyFishAppBySlug("tinypipe");
-    const tinytail = tinyFishAppBySlug("tinytail");
-    if (!tinypipe || !tinytail) {
+    const tinyping = tinyFishAppBySlug("tinyping");
+    const tinyfeed = tinyFishAppBySlug("tinyfeed");
+    if (!tinyping || !tinyfeed) {
       throw new Error("catalog is missing products");
     }
-    expect(tinyFishAppUrl(tinypipe, null, {})).toBe("http://127.0.0.1:3712/ui");
+    expect(tinyFishAppUrl(tinyping, null, {})).toBe("http://127.0.0.1:18101/ui");
     expect(
-      tinyFishAppUrl(tinypipe, {
+      tinyFishAppUrl(tinyping, {
         url: "https://tinybot-tfu-alice-org.sprites.app",
       }),
-    ).toBe("/api/sprite/apps/tinypipe/ui");
+    ).toBe("/api/sprite/apps/tinyping/ui");
     expect(
-      tinyFishAppUrl(tinytail, {
+      tinyFishAppUrl(tinyfeed, {
         url: "https://tinybot-tfu-alice-org.sprites.app",
       }),
-    ).toBe("/api/sprite/apps/tinytail/ui");
+    ).toBe("/api/sprite/apps/tinyfeed/ui");
   });
 
   test("card probe is GET /health on the remapped host port, not the UI path", () => {
-    const tinypipe = tinyFishAppBySlug("tinypipe");
-    const tinytail = tinyFishAppBySlug("tinytail");
-    const tinywatch = tinyFishAppBySlug("tinywatch");
-    if (!tinypipe || !tinytail || !tinywatch) {
+    const tinyping = tinyFishAppBySlug("tinyping");
+    const tinytrigger = tinyFishAppBySlug("tinytrigger");
+    const tinyfeed = tinyFishAppBySlug("tinyfeed");
+    if (!tinyping || !tinytrigger || !tinyfeed) {
       throw new Error("catalog is missing products");
     }
-    expect(tinyFishAppHealthUrl(tinypipe, null, {})).toBe(
-      "http://127.0.0.1:3712/health",
+    expect(tinyFishAppHealthUrl(tinyping, null, {})).toBe(
+      "http://127.0.0.1:18101/health",
     );
-    expect(tinyFishAppHealthUrl(tinytail, null, {})).toBe(
-      "http://127.0.0.1:18765/health",
-    );
-    expect(tinyFishAppHealthUrl(tinywatch, null, {})).toBe(
+    expect(tinyFishAppHealthUrl(tinytrigger, null, {})).toBe(
       "http://127.0.0.1:18081/health",
     );
+    expect(tinyFishAppHealthUrl(tinyfeed, null, {})).toBe(
+      "http://127.0.0.1:18082/health",
+    );
     expect(
-      tinyFishAppHealthUrl(tinypipe, { url: "https://x.sprites.app" }),
-    ).toBe("/api/sprite/apps/tinypipe/health");
+      tinyFishAppHealthUrl(tinyping, { url: "https://x.sprites.app" }),
+    ).toBe("/api/sprite/apps/tinyping/health");
   });
 
   test("consume path is /api/products/:slug/*", () => {
+    expect(tinyFishProductApiPath("tinyping", "/health")).toBe(
+      "/api/products/tinyping/health",
+    );
     expect(tinyFishProductApiPath("tinypipe", "/mcp")).toBe(
       "/api/products/tinypipe/mcp",
     );
     expect(tinyFishProductApiPath("tinytail", "/v1/as-of")).toBe(
       "/api/products/tinytail/v1/as-of",
     );
-    expect(tinyFishProductApiPath("tinykit")).toBe("/api/products/tinykit/");
   });
 
   test("Fly / env overrides replace localhost remap on cards and health", () => {
-    const tinypipe = tinyFishAppBySlug("tinypipe");
-    if (!tinypipe) throw new Error("catalog is missing tinypipe");
-    const env = { TINYFISH_TINYPIPE_URL: "https://tf-tinypipe.fly.dev" };
-    expect(tinyFishAppUrl(tinypipe, null, env)).toBe(
-      "https://tf-tinypipe.fly.dev/ui",
+    const tinyping = tinyFishAppBySlug("tinyping");
+    if (!tinyping) throw new Error("catalog is missing tinyping");
+    const env = { TINYFISH_TINYPING_URL: "https://tf-tinyping.fly.dev" };
+    expect(tinyFishAppUrl(tinyping, null, env)).toBe(
+      "https://tf-tinyping.fly.dev/ui",
     );
-    expect(tinyFishAppHealthUrl(tinypipe, null, env)).toBe(
-      "https://tf-tinypipe.fly.dev/health",
+    expect(tinyFishAppHealthUrl(tinyping, null, env)).toBe(
+      "https://tf-tinyping.fly.dev/health",
     );
     expect(
-      tinyFishAppUrl(tinypipe, null, {
-        VITE_TINYFISH_TF_03_URL: "https://tf-tinypipe.fly.dev/ui",
+      tinyFishAppUrl(tinyping, null, {
+        VITE_TINYFISH_TINY_PING_URL: "https://tf-tinyping.fly.dev/ui",
       }),
-    ).toBe("https://tf-tinypipe.fly.dev/ui");
-    expect(tinyFishAppUrl(tinypipe, null, {})).toBe("http://127.0.0.1:3712/ui");
+    ).toBe("https://tf-tinyping.fly.dev/ui");
+    expect(tinyFishAppUrl(tinyping, null, {})).toBe("http://127.0.0.1:18101/ui");
   });
 });

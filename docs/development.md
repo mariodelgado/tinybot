@@ -44,10 +44,19 @@ Use `bun run dev` only when you want the app and API server without starting the
 | PostgreSQL        | 5432                       |
 | TinyPipe          | 3712                       |
 | TinyTail          | 18765                      |
-| TinyPulse         | 18082                      |
 | TinyWeb           | 18766                      |
-| TinyWatch         | 18081                      |
 | TinyKit           | 18083                      |
+| TinyPing          | 18101                      |
+| TinyTrigger       | 18081                      |
+| TinyReg           | 18102                      |
+| TinyScout         | 18103                      |
+| TinyBrief         | 18104                      |
+| TinyDeed          | 18105                      |
+| TinyFeed          | 18082                      |
+| TinyFoundry       | 18106                      |
+| TinyMargin        | 18107                      |
+| TinyAtlas         | 18108                      |
+| TinyPrior         | 18109                      |
 
 `start.sh` leaves existing matching services alone and reports when a port is held by another process.
 

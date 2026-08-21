@@ -1,15 +1,15 @@
 /**
- * Package-provided TinyFish coworkers: the six product slugs, in start order.
- * TinyPipe is first so an empty roster / composer fallback reaches auth first.
+ * Package-provided TinyFish coworkers: the 11 board slugs, TinyPing first.
+ * Platform backends (TinyPipe, TinyTail, TinyWeb, TinyKit) are not empty-state agents.
  */
 
-import { productsInStartOrder } from "./stack";
+import { boardProductsInStartOrder } from "./stack";
 
-export const TINYFISH_DEFAULT_AGENT_IDS = productsInStartOrder().map(
+export const TINYFISH_DEFAULT_AGENT_IDS = boardProductsInStartOrder().map(
   (product) => product.slug,
 );
 
-export const TINYFISH_DEFAULT_AGENT_NAMES = productsInStartOrder().map(
+export const TINYFISH_DEFAULT_AGENT_NAMES = boardProductsInStartOrder().map(
   (product) => product.title,
 );
 
@@ -36,7 +36,7 @@ export function exploreTinyFishAgents<T extends ListedAgent>(
   });
 }
 
-/** Composer fallback: TinyPipe, then Tail, Pulse, Web, Watch, Kit. */
+/** Composer fallback: TinyPing, then the rest of the board in start order. */
 export function composerFallbackAgent<T extends ListedAgent>(
   agents: T[] | undefined,
 ): T | undefined {

@@ -7,19 +7,17 @@
  */
 
 import { z } from "zod";
-import { tinyFishProductBySlug } from "../../../app/src/lib/tinyfish/stack";
+import {
+  TINYFISH_PRODUCTS,
+  tinyFishProductBySlug,
+} from "../../../app/src/lib/tinyfish/stack";
 import type { GrantedTool } from "../plugins/tools";
 import { copyForwardHeaders } from "./forward";
 import { localProductUpstream } from "./products-proxy";
 
-const TINYFISH_AGENT_IDS = new Set([
-  "tinypipe",
-  "tinytail",
-  "tinypulse",
-  "tinyweb",
-  "tinywatch",
-  "tinykit",
-]);
+const TINYFISH_AGENT_IDS = new Set(
+  TINYFISH_PRODUCTS.map((product) => product.slug),
+);
 
 const DEFAULT_CALL: Record<string, { path: string; method: string }> = {
   tinypipe: { path: "/mcp", method: "POST" },

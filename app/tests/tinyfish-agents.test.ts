@@ -10,6 +10,9 @@ const leftover = [
   { id: "general-assistant", name: "General Assistant" },
   { id: "knowledge", name: "Knowledge" },
   { id: "risk-analyst", name: "Risk Analyst" },
+  { id: "tinypipe", name: "TinyPipe" },
+  { id: "tinywatch", name: "TinyWatch" },
+  { id: "tinypulse", name: "TinyPulse" },
 ];
 
 function publicRoster() {
@@ -22,22 +25,32 @@ function publicRoster() {
 }
 
 describe("empty roster / default explore", () => {
-  test("lists the six TinyFish products in start order", () => {
+  test("lists the 11 board products, TinyPing first", () => {
     expect(TINYFISH_DEFAULT_AGENT_IDS).toEqual([
-      "tinypipe",
-      "tinytail",
-      "tinypulse",
-      "tinyweb",
-      "tinywatch",
-      "tinykit",
+      "tinyping",
+      "tinytrigger",
+      "tinyreg",
+      "tinyscout",
+      "tinybrief",
+      "tinydeed",
+      "tinyfeed",
+      "tinyfoundry",
+      "tinymargin",
+      "tinyatlas",
+      "tinyprior",
     ]);
     expect(TINYFISH_DEFAULT_AGENT_NAMES).toEqual([
-      "TinyPipe",
-      "TinyTail",
-      "TinyPulse",
-      "TinyWeb",
-      "TinyWatch",
-      "TinyKit",
+      "TinyPing",
+      "TinyTrigger",
+      "TinyReg",
+      "TinyScout",
+      "TinyBrief",
+      "TinyDeed",
+      "TinyFeed",
+      "TinyFoundry",
+      "TinyMargin",
+      "TinyAtlas",
+      "TinyPrior",
     ]);
 
     const shuffled = [...publicRoster()].reverse();
@@ -50,17 +63,17 @@ describe("empty roster / default explore", () => {
     ]);
   });
 
-  test("composer fallback prefers TinyPipe, then the others in start order", () => {
-    expect(composerFallbackAgent(publicRoster())?.id).toBe("tinypipe");
-    expect(composerFallbackAgent(publicRoster())?.name).toBe("TinyPipe");
+  test("composer fallback prefers TinyPing, then the others in start order", () => {
+    expect(composerFallbackAgent(publicRoster())?.id).toBe("tinyping");
+    expect(composerFallbackAgent(publicRoster())?.name).toBe("TinyPing");
     expect(
       composerFallbackAgent(
-        publicRoster().filter((agent) => agent.id !== "tinypipe"),
+        publicRoster().filter((agent) => agent.id !== "tinyping"),
       )?.id,
-    ).toBe("tinytail");
+    ).toBe("tinytrigger");
   });
 
-  test("does not treat leftover OpenBot sample ids as the default explore set", () => {
+  test("does not treat leftover OpenBot samples or old six-only ids as the default explore set", () => {
     const mixed = [
       ...leftover.map((agent) => ({
         ...agent,
@@ -70,13 +83,13 @@ describe("empty roster / default explore", () => {
       ...publicRoster(),
     ];
     const explore = exploreTinyFishAgents(mixed);
-    expect(explore.map((agent) => agent.name).slice(0, 6)).toEqual([
+    expect(explore.map((agent) => agent.name).slice(0, 11)).toEqual([
       ...TINYFISH_DEFAULT_AGENT_NAMES,
     ]);
-    expect(composerFallbackAgent(mixed)?.id).toBe("tinypipe");
+    expect(composerFallbackAgent(mixed)?.id).toBe("tinyping");
   });
 
-  test("an empty personal roster still shows the six public products", () => {
+  test("an empty personal roster still shows the 11 public board products", () => {
     const agents = [
       ...publicRoster(),
       {
@@ -87,7 +100,7 @@ describe("empty roster / default explore", () => {
       },
     ];
     const explore = exploreTinyFishAgents(agents);
-    expect(explore).toHaveLength(6);
+    expect(explore).toHaveLength(11);
     expect(explore.every((agent) => !agent.mine)).toBe(true);
     expect(explore.map((agent) => agent.name)).toEqual([
       ...TINYFISH_DEFAULT_AGENT_NAMES,

@@ -164,12 +164,21 @@ When optional SPIRE services are used:
 | PostgreSQL        | 5432                       | `POSTGRES_PORT`   |
 | TinyPipe          | 3712                       | `TINYPIPE_HOST_PORT` |
 | TinyTail          | 18765                      | `TINYTAIL_HOST_PORT` |
-| TinyPulse         | 18082                      | `TINYPULSE_HOST_PORT` |
 | TinyWeb           | 18766                      | `TINYWEB_HOST_PORT` |
-| TinyWatch         | 18081                      | `TINYWATCH_HOST_PORT` |
 | TinyKit           | 18083                      | `TINYKIT_HOST_PORT` |
+| TinyPing          | 18101                      | `TINYPING_HOST_PORT` |
+| TinyTrigger       | 18081                      | `TINYTRIGGER_HOST_PORT` |
+| TinyReg           | 18102                      | `TINYREG_HOST_PORT` |
+| TinyScout         | 18103                      | `TINYSCOUT_HOST_PORT` |
+| TinyBrief         | 18104                      | `TINYBRIEF_HOST_PORT` |
+| TinyDeed          | 18105                      | `TINYDEED_HOST_PORT` |
+| TinyFeed          | 18082                      | `TINYFEED_HOST_PORT` |
+| TinyFoundry       | 18106                      | `TINYFOUNDRY_HOST_PORT` |
+| TinyMargin        | 18107                      | `TINYMARGIN_HOST_PORT` |
+| TinyAtlas         | 18108                      | `TINYATLAS_HOST_PORT` |
+| TinyPrior         | 18109                      | `TINYPRIOR_HOST_PORT` |
 
-TinyFish product ports are published by wrapping the named compose service (`tinyfish-web`, `ltdf`, `feed`, `engine`, `gallery`) or by `docker-compose.tinyfish.yml`. Native container ports stay 3712 / 8765 / 8080; only the host side is remapped. Extra publishes (TinyPulse 8081/8090, TinyWatch webhook) stay unpublished. Cards and start wait on `GET /health`. Agents call `/api/products/<slug>/*`. Details: [TINYBOT.md](../TINYBOT.md).
+TinyFish product ports are published by wrapping the named compose service or by `docker-compose.tinyfish.yml` when that overlay lists the slug. Native container ports stay 3712 / 8765 / 8080; only the host side is remapped. Extra publishes (TinyFeed 8081/8090, TinyTrigger webhook) stay unpublished. Cards and start wait on `GET /health`. Agents call `/api/products/<slug>/*`. Details: [TINYBOT.md](../TINYBOT.md).
 
 Set these in `.env` or in the environment. `docker-compose.yml` publishes on them and
 `scripts/start.sh` reads the same names to decide where to look, so one setting moves a service and
@@ -221,16 +230,16 @@ Theme CSS may define only `:root` and `.dark` blocks, approved theme variables, 
 
 ```yaml
 agents:
-  - id: tinypipe
-    name: TinyPipe
-    title: Auth + usage
-    role_description: Usage tf-03. TinyFish MCP auth and credit-pool metering. Fixture CIMD only. Tokens are opaque tfk.*. Do not invent a production issuer or JWKS.
-    avatar_seed: tinypipe
+  - id: tinyping
+    name: TinyPing
+    title: Funnel
+    role_description: Usage tiny-ping. Funnel first. Do not invent a seventh platform product.
+    avatar_seed: tinyping
     type: built-in
-    system_prompt: You are TinyPipe, Auth + usage (tf-03). TinyFish MCP auth and credit-pool metering. Fixture CIMD only. Tokens are opaque tfk.*. Do not invent a production issuer or JWKS.
+    system_prompt: You are TinyPing (tiny-ping). Funnel first. Call this product through call_product_backend. Do not invent product routes.
 ```
 
-TinyBot's shipped package seeds all six TinyFish products as `built-in` agents (`tinypipe`, `tinytail`, `tinypulse`, `tinyweb`, `tinywatch`, `tinykit`). Do not invent AG-UI endpoints for those product UIs.
+TinyBot's shipped package seeds the 11 board products as `built-in` agents (TinyPing first). Platform backends (TinyPipe, TinyTail, TinyWeb, TinyKit) are not empty-state agents. Do not invent AG-UI endpoints for those product UIs.
 
 Each agent requires `id`, `name`, `title`, `role_description`, and `type`.
 

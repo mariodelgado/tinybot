@@ -3,6 +3,8 @@
  * natively bind 8080 or 8765 do not collide inside one Sprite.
  */
 
+import { TINYFISH_PRODUCTS } from "../../../app/src/lib/tinyfish/stack";
+
 export const SPRITE_GATEWAY_NAME = "tinybot-gateway";
 export const SPRITE_GATEWAY_PORT = 8080;
 export const SPRITE_BOOTSTRAP_MARKER = "/home/sprite/.tinybot/bootstrapped";
@@ -16,50 +18,15 @@ export type SpriteProduct = {
   startOrder: number;
 };
 
-export const SPRITE_PRODUCTS: readonly SpriteProduct[] = [
-  {
-    slug: "tinytail",
-    usageId: "js-01",
-    listenPort: 18765,
-    path: "/ui",
-    startOrder: 1,
-  },
-  {
-    slug: "tinypulse",
-    usageId: "js-02",
-    listenPort: 18082,
-    path: "/ui",
-    startOrder: 2,
-  },
-  {
-    slug: "tinyweb",
-    usageId: "js-03",
-    listenPort: 18766,
-    path: "/ui",
-    startOrder: 3,
-  },
-  {
-    slug: "tinywatch",
-    usageId: "tf-01",
-    listenPort: 18081,
-    path: "/",
-    startOrder: 4,
-  },
-  {
-    slug: "tinykit",
-    usageId: "tf-02",
-    listenPort: 18083,
-    path: "/",
-    startOrder: 5,
-  },
-  {
-    slug: "tinypipe",
-    usageId: "tf-03",
-    listenPort: 3712,
-    path: "/ui",
-    startOrder: 0,
-  },
-];
+export const SPRITE_PRODUCTS: readonly SpriteProduct[] = TINYFISH_PRODUCTS.map(
+  (product) => ({
+    slug: product.slug,
+    usageId: product.usageId,
+    listenPort: product.hostPort,
+    path: product.path,
+    startOrder: product.startOrder,
+  }),
+);
 
 export function spriteProductBySlug(slug: string): SpriteProduct | undefined {
   return SPRITE_PRODUCTS.find((product) => product.slug === slug);

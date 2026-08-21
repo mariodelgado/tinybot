@@ -12,7 +12,7 @@ import {
   resolveProductHealthUrl,
 } from "./origins";
 import {
-  TINYFISH_PRODUCTS,
+  boardProductsInStartOrder,
   type TinyFishUsageId,
   tinyFishProductBySlug,
   tinyFishProductUrl,
@@ -30,7 +30,7 @@ export type TinyFishApp = {
   path: string;
 };
 
-export const TINYFISH_APPS: readonly TinyFishApp[] = TINYFISH_PRODUCTS.map(
+export const TINYFISH_APPS: readonly TinyFishApp[] = boardProductsInStartOrder().map(
   (product) => ({
     usageId: product.usageId,
     slug: product.slug,

@@ -1,14 +1,13 @@
 /**
- * Start the six TinyFish products with unique host ports. TinyPipe is first.
+ * Start TinyFish products with unique host ports. TinyPipe is first.
  *
- * Products are linked services. Preferred: wrap each product's own compose
- * after fetching the latest default branch (or consume-contract PR) into a
- * sibling checkout or gitignored `.tinyfish-siblings/` clone. Fallback:
- * `docker-compose.tinyfish.yml` git-context builds. Never copy product files
- * into the TinyBot tree.
+ * Board cards are the 11 products (TinyPing first). Platform backends
+ * (TinyPipe, TinyTail, TinyWeb, TinyKit) still start and proxy. Products are
+ * linked services. Wrap latest compose from a sibling or `.tinyfish-siblings/`
+ * clone. Fallback: git-context overlay. A README-only sibling is not a failure.
  */
 
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { stringify as stringifyYaml } from "yaml";
 import {
@@ -18,6 +17,8 @@ import {
   resolveProductHealthUrl,
 } from "../../app/src/lib/tinyfish/origins";
 import {
+  boardProductsInStartOrder,
+  platformProductsInStartOrder,
   productsInStartOrder,
   TINYFISH_FIXTURE_ISSUER,
   TINYPIPE_MCP_URL,
@@ -330,7 +331,15 @@ async function startWrapped(
   return true;
 }
 
+function overlayDefines(slug: string): boolean {
+  if (!existsSync(OVERLAY)) return false;
+  return new RegExp(`^  ${slug}:`, "m").test(readFileSync(OVERLAY, "utf8"));
+}
+
 async function startOverlayService(product: TinyFishProduct): Promise<boolean> {
+  if (!overlayDefines(product.slug)) {
+    return false;
+  }
   info(
     `  ${product.title}: git-context fallback from docker-compose.tinyfish.yml :${product.hostPort}`,
   );
@@ -366,7 +375,7 @@ async function waitForTinyPipe(product: TinyFishProduct) {
     await Bun.sleep(2000);
   }
   fail(
-    "TinyPipe did not become reachable on 127.0.0.1:3712. Sign-in and the six cards need it up first.",
+    "TinyPipe did not become reachable on 127.0.0.1:3712. Sign-in and the board cards need it up first.",
   );
 }
 
@@ -392,8 +401,13 @@ async function startProduct(product: TinyFishProduct): Promise<void> {
   if (await startOverlayService(product)) {
     return;
   }
-  fail(
-    `${product.title} did not start. Need Docker plus GitHub access to ${product.repo} (sibling checkout, latest clone into .tinyfish-siblings/, or git-context build).`,
+  if (product.slug === "tinypipe") {
+    fail(
+      "TinyPipe did not start. Need Docker plus GitHub access to tf-03-mcp-distribution (sibling checkout, latest clone into .tinyfish-siblings/, or git-context build).",
+    );
+  }
+  info(
+    `  ${product.title}: no compose yet (README-only is fine) — card may show Unreachable`,
   );
 }
 
@@ -424,11 +438,11 @@ async function main() {
   );
   if (local.length === 0) {
     info(
-      "All six products have TINYFISH_<SLUG>_URL / VITE_TINYFISH_<USAGE>_URL; not starting local compose.",
+      "All products have TINYFISH_<SLUG>_URL / VITE_TINYFISH_<USAGE>_URL; not starting local compose.",
     );
   } else if (!hasDocker()) {
     fail(
-      "Docker is required to start TinyPipe and the five sibling products. Install Docker, or set OPENBOT_SKIP_TINYFISH_PRODUCTS=1 to start TinyBot only, or point TINYFISH_<SLUG>_URL at Fly.",
+      "Docker is required to start TinyPipe and local siblings. Install Docker, or set OPENBOT_SKIP_TINYFISH_PRODUCTS=1 to start TinyBot only, or point TINYFISH_<SLUG>_URL at Fly.",
     );
   }
 
@@ -440,8 +454,12 @@ async function main() {
     }
   }
 
-  info("Card URLs:");
-  for (const product of productsInStartOrder()) {
+  info("Board cards (TinyPing first):");
+  for (const product of boardProductsInStartOrder()) {
+    info(`  ${product.title}: ${resolveProductCardUrl(product, process.env)}`);
+  }
+  info("Platform backends:");
+  for (const product of platformProductsInStartOrder()) {
     info(`  ${product.title}: ${resolveProductCardUrl(product, process.env)}`);
   }
 }

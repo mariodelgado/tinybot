@@ -4,7 +4,9 @@ import { join } from "node:path";
 import { TINYFISH_APPS } from "../app/src/lib/tinyfish/apps";
 import {
   allStackHostPorts,
+  boardProductsInStartOrder,
   duplicateNumbers,
+  platformProductsInStartOrder,
   productsInStartOrder,
   TINYBOT_HOST_PORTS,
   TINYFISH_FIXTURE_ISSUER,
@@ -22,7 +24,7 @@ import {
 
 const root = join(import.meta.dir, "..");
 
-test("TinyBot and the six product host ports are unique", () => {
+test("TinyBot and product host ports are unique", () => {
   const ports = allStackHostPorts();
   expect(duplicateNumbers(ports)).toEqual([]);
   expect(new Set(ports).size).toBe(ports.length);
@@ -37,27 +39,56 @@ test("TinyBot and the six product host ports are unique", () => {
   });
 });
 
-test("catalog defaults match the remapped TinyBot host ports", () => {
-  const expected = {
-    tinytail: "http://127.0.0.1:18765/ui",
-    tinypulse: "http://127.0.0.1:18082/ui",
-    tinyweb: "http://127.0.0.1:18766/ui",
-    tinywatch: "http://127.0.0.1:18081/",
-    tinykit: "http://127.0.0.1:18083/",
-    tinypipe: "http://127.0.0.1:3712/ui",
-  };
+test("board is 11 cards TinyPing first; platform backends are not cards", () => {
+  expect(TINYFISH_PRODUCTS).toHaveLength(15);
+  expect(TINYFISH_APPS).toHaveLength(11);
+  expect(boardProductsInStartOrder().map((product) => product.slug)).toEqual([
+    "tinyping",
+    "tinytrigger",
+    "tinyreg",
+    "tinyscout",
+    "tinybrief",
+    "tinydeed",
+    "tinyfeed",
+    "tinyfoundry",
+    "tinymargin",
+    "tinyatlas",
+    "tinyprior",
+  ]);
+  expect(platformProductsInStartOrder().map((product) => product.slug)).toEqual([
+    "tinypipe",
+    "tinytail",
+    "tinyweb",
+    "tinykit",
+  ]);
+  expect(TINYFISH_PRODUCTS.some((product) => product.slug === "tinywatch")).toBe(
+    false,
+  );
+  expect(TINYFISH_PRODUCTS.some((product) => product.slug === "tinypulse")).toBe(
+    false,
+  );
 
-  expect(TINYFISH_PRODUCTS).toHaveLength(6);
-  expect(TINYFISH_APPS).toHaveLength(6);
   for (const product of TINYFISH_PRODUCTS) {
-    const url = tinyFishProductUrl(product);
-    expect(url).toBe(expected[product.slug as keyof typeof expected]);
-    expect(
-      TINYFISH_APPS.find((app) => app.slug === product.slug)?.defaultUrl,
-    ).toBe(url);
     expect(product.repo).toStartWith("mariodelgado/");
+    expect(tinyFishProductHealthUrl(product)).toBe(
+      `http://127.0.0.1:${product.hostPort}/health`,
+    );
+    const card = TINYFISH_APPS.find((app) => app.slug === product.slug);
+    if (product.kind === "board") {
+      expect(card?.defaultUrl).toBe(tinyFishProductUrl(product));
+    } else {
+      expect(card).toBeUndefined();
+    }
   }
+
+  expect(tinyFishProductBySlugPort("tinytrigger")).toBe(18081);
+  expect(tinyFishProductBySlugPort("tinyfeed")).toBe(18082);
+  expect(tinyFishProductBySlugPort("tinyping")).toBe(18101);
 });
+
+function tinyFishProductBySlugPort(slug: string): number | undefined {
+  return TINYFISH_PRODUCTS.find((product) => product.slug === slug)?.hostPort;
+}
 
 test("TinyPipe starts first and remains the auth socket on 3712", () => {
   const order = productsInStartOrder();
@@ -67,20 +98,30 @@ test("TinyPipe starts first and remains the auth socket on 3712", () => {
   expect(TINYFISH_FIXTURE_ISSUER).toBe("https://issuer.fixtures.tinyfish.test");
 });
 
-test("compose overlay publishes each product on its remapped loopback port", () => {
+test("compose overlay publishes buildable products on remapped loopback ports", () => {
   const compose = readFileSync(
     join(root, "docker-compose.tinyfish.yml"),
     "utf8",
   );
   const published = hostPortsFromComposeYaml(compose);
 
-  expect(published).toEqual([3712, 18765, 18082, 18766, 18081, 18083]);
+  expect(published).toEqual([3712, 18765, 18766, 18083, 18081, 18082]);
   expect(duplicateNumbers(published)).toEqual([]);
   expect(
     published.some((port) => Object.values(TINYBOT_HOST_PORTS).includes(port)),
   ).toBe(false);
 
-  for (const product of TINYFISH_PRODUCTS) {
+  const overlaySlugs = [
+    "tinypipe",
+    "tinytail",
+    "tinyweb",
+    "tinykit",
+    "tinytrigger",
+    "tinyfeed",
+  ];
+  for (const slug of overlaySlugs) {
+    const product = TINYFISH_PRODUCTS.find((item) => item.slug === slug);
+    if (!product) throw new Error(`${slug} missing`);
     expect(compose).toContain(
       `\${${product.hostPortEnv}:-${product.hostPort}}:\${${product.nativePortEnv}:-${product.nativePort}}`,
     );
@@ -88,38 +129,40 @@ test("compose overlay publishes each product on its remapped loopback port", () 
     expect(compose).toContain(`${product.slug}:`);
   }
 
+  expect(compose).not.toContain("tinypulse");
+  expect(compose).not.toContain("tinywatch");
   expect(compose).toContain("depends_on:");
   expect(compose.match(/depends_on:\n\s+- tinypipe/g)?.length).toBe(5);
   expect(compose).toContain("TINYFISH_MCP_URL");
   expect(compose).not.toContain("record_usage");
 });
 
-test("catalog uses the verified compose service and GET /health on the remapped host port", () => {
+test("catalog uses the verified compose service and GET /health", () => {
   const expected = {
     tinypipe: { composeService: "tinyfish-web", hostPort: 3712 },
     tinytail: { composeService: "ltdf", hostPort: 18765 },
-    tinypulse: { composeService: "feed", hostPort: 18082 },
+    tinyfeed: { composeService: "feed", hostPort: 18082 },
     tinyweb: { composeService: "tinyfish-web", hostPort: 18766 },
-    tinywatch: { composeService: "engine", hostPort: 18081 },
+    tinytrigger: { composeService: "engine", hostPort: 18081 },
     tinykit: { composeService: "gallery", hostPort: 18083 },
   } as const;
 
-  for (const product of TINYFISH_PRODUCTS) {
-    const want = expected[product.slug as keyof typeof expected];
-    expect(product.composeService).toBe(want.composeService);
-    expect(product.healthPath).toBe("/health");
-    expect(tinyFishProductHealthUrl(product)).toBe(
+  for (const [slug, want] of Object.entries(expected)) {
+    const product = TINYFISH_PRODUCTS.find((item) => item.slug === slug);
+    expect(product?.composeService).toBe(want.composeService);
+    expect(product?.healthPath).toBe("/health");
+    expect(tinyFishProductHealthUrl(product!)).toBe(
       `http://127.0.0.1:${want.hostPort}/health`,
     );
   }
 });
 
-test("wrapping TinyPulse publishes feed, not webhook or postgres", () => {
-  const tinypulse = TINYFISH_PRODUCTS.find(
-    (product) => product.slug === "tinypulse",
+test("wrapping TinyFeed publishes feed, not webhook or postgres", () => {
+  const tinyfeed = TINYFISH_PRODUCTS.find(
+    (product) => product.slug === "tinyfeed",
   );
-  if (!tinypulse) {
-    throw new Error("tinypulse missing from catalog");
+  if (!tinyfeed) {
+    throw new Error("tinyfeed missing from catalog");
   }
 
   const rewritten = remapComposeServices(
@@ -129,22 +172,22 @@ test("wrapping TinyPulse publishes feed, not webhook or postgres", () => {
       postgres: { ports: ["5432:5432"] },
       sidecar: { ports: ["8090:8090"] },
     },
-    tinypulse,
+    tinyfeed,
   );
 
-  expect(rewritten.feed?.ports).toEqual([uiPublishBinding(tinypulse)]);
+  expect(rewritten.feed?.ports).toEqual([uiPublishBinding(tinyfeed)]);
   expect(rewritten.feed?.ports).toEqual(["127.0.0.1:18082:8080"]);
   expect(rewritten.webhook?.ports).toBeUndefined();
   expect(rewritten.postgres?.ports).toBeUndefined();
   expect(rewritten.sidecar?.ports).toBeUndefined();
 });
 
-test("wrapping TinyWatch publishes engine, not the webhook sidecar", () => {
-  const tinywatch = TINYFISH_PRODUCTS.find(
-    (product) => product.slug === "tinywatch",
+test("wrapping TinyTrigger publishes engine, not the webhook sidecar", () => {
+  const tinytrigger = TINYFISH_PRODUCTS.find(
+    (product) => product.slug === "tinytrigger",
   );
-  if (!tinywatch) {
-    throw new Error("tinywatch missing from catalog");
+  if (!tinytrigger) {
+    throw new Error("tinytrigger missing from catalog");
   }
 
   const rewritten = remapComposeServices(
@@ -153,7 +196,7 @@ test("wrapping TinyWatch publishes engine, not the webhook sidecar", () => {
       webhook: { ports: ["8081:8081"] },
       postgres: { ports: ["5432:5432"] },
     },
-    tinywatch,
+    tinytrigger,
   );
 
   expect(rewritten.engine?.ports).toEqual(["127.0.0.1:18081:8080"]);
@@ -162,11 +205,11 @@ test("wrapping TinyWatch publishes engine, not the webhook sidecar", () => {
 });
 
 test("named compose service wins over another service that also binds the native port", () => {
-  const tinypulse = TINYFISH_PRODUCTS.find(
-    (product) => product.slug === "tinypulse",
+  const tinyfeed = TINYFISH_PRODUCTS.find(
+    (product) => product.slug === "tinyfeed",
   );
-  if (!tinypulse) {
-    throw new Error("tinypulse missing from catalog");
+  if (!tinyfeed) {
+    throw new Error("tinyfeed missing from catalog");
   }
 
   const rewritten = remapComposeServices(
@@ -174,14 +217,14 @@ test("named compose service wins over another service that also binds the native
       webhook: { ports: ["8080:8080"] },
       feed: { ports: ["8080:8080"] },
     },
-    tinypulse,
+    tinyfeed,
   );
 
   expect(rewritten.feed?.ports).toEqual(["127.0.0.1:18082:8080"]);
   expect(rewritten.webhook?.ports).toBeUndefined();
 });
 
-test("start-products waits on GET /health, not a UI path", () => {
+test("start-products waits on GET /health and does not fail README-only siblings", () => {
   const start = readFileSync(
     join(root, "scripts/tinyfish/start-products.ts"),
     "utf8",
@@ -191,6 +234,8 @@ test("start-products waits on GET /health, not a UI path", () => {
   expect(
     start.indexOf("resolveProductHealthUrl(product, process.env)"),
   ).toBeLessThan(start.indexOf("TinyPipe ready"));
+  expect(start).toContain("README-only is fine");
+  expect(start).toContain("card may show Unreachable");
 });
 
 test("sibling checkouts stay outside the TinyBot tree unless cached gitignored", () => {
@@ -217,4 +262,10 @@ test("start.sh brings TinyPipe up first and wires the fixture MCP URL", () => {
   expect(start.indexOf("start-products.ts")).toBeLessThan(
     start.indexOf("docker compose up"),
   );
+  expect(start).toContain("TINYFISH_TINYPING_URL");
+  expect(start).toContain("VITE_TINYFISH_TINY_PING_URL");
+  expect(start).not.toContain("TINYPULSE");
+  expect(start).not.toContain("TINYWATCH");
+  expect(start).not.toContain("TinyPulse");
+  expect(start).not.toContain("TinyWatch");
 });

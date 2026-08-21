@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
-# Start TinyBot and the six TinyFish products, then verify each service answers.
-# TinyPipe comes up first (auth socket on :3712). Safe to rerun: matching services
-# are left running, and unrelated port holders are reported.
+# Start TinyBot and the TinyFish products, then verify each service answers.
+# TinyPipe comes up first (auth socket on :3712). Board cards are the 11 products
+# (TinyPing first). Platform backends still start and proxy. Safe to rerun:
+# matching services are left running, and unrelated port holders are reported.
 
 set -euo pipefail
 
@@ -112,10 +113,18 @@ ensure_setting TINYFISH_ISSUER "https://issuer.fixtures.tinyfish.test"
 export TINYFISH_MCP_URL="$(setting TINYFISH_MCP_URL http://127.0.0.1:3712/mcp)"
 export TINYFISH_ISSUER="$(setting TINYFISH_ISSUER https://issuer.fixtures.tinyfish.test)"
 for _tf_url_key in \
-  TINYFISH_TINYPIPE_URL TINYFISH_TINYTAIL_URL TINYFISH_TINYPULSE_URL \
-  TINYFISH_TINYWEB_URL TINYFISH_TINYWATCH_URL TINYFISH_TINYKIT_URL \
-  VITE_TINYFISH_TF_03_URL VITE_TINYFISH_JS_01_URL VITE_TINYFISH_JS_02_URL \
-  VITE_TINYFISH_JS_03_URL VITE_TINYFISH_TF_01_URL VITE_TINYFISH_TF_02_URL
+  TINYFISH_TINYPIPE_URL TINYFISH_TINYTAIL_URL TINYFISH_TINYWEB_URL \
+  TINYFISH_TINYKIT_URL TINYFISH_TINYPING_URL TINYFISH_TINYTRIGGER_URL \
+  TINYFISH_TINYREG_URL TINYFISH_TINYSCOUT_URL TINYFISH_TINYBRIEF_URL \
+  TINYFISH_TINYDEED_URL TINYFISH_TINYFEED_URL TINYFISH_TINYFOUNDRY_URL \
+  TINYFISH_TINYMARGIN_URL TINYFISH_TINYATLAS_URL TINYFISH_TINYPRIOR_URL \
+  VITE_TINYFISH_TF_03_URL VITE_TINYFISH_JS_01_URL VITE_TINYFISH_JS_03_URL \
+  VITE_TINYFISH_TF_02_URL VITE_TINYFISH_TINY_PING_URL \
+  VITE_TINYFISH_TINY_TRIGGER_URL VITE_TINYFISH_TINY_REG_URL \
+  VITE_TINYFISH_TINY_SCOUT_URL VITE_TINYFISH_TINY_BRIEF_URL \
+  VITE_TINYFISH_TINY_DEED_URL VITE_TINYFISH_TINY_FEED_URL \
+  VITE_TINYFISH_TINY_FOUNDRY_URL VITE_TINYFISH_TINY_MARGIN_URL \
+  VITE_TINYFISH_TINY_ATLAS_URL VITE_TINYFISH_TINY_PRIOR_URL
 do
   _tf_url_val="$(setting "$_tf_url_key" "")"
   if [ -n "$_tf_url_val" ]; then
@@ -124,7 +133,7 @@ do
 done
 unset _tf_url_key _tf_url_val
 if [ "${OPENBOT_SKIP_TINYFISH_PRODUCTS:-}" = "1" ]; then
-  info "  skipped (OPENBOT_SKIP_TINYFISH_PRODUCTS=1). Cards show Unreachable until the six are up."
+  info "  skipped (OPENBOT_SKIP_TINYFISH_PRODUCTS=1). Cards show Unreachable until board products are up."
 else
   if ! bun "$ROOT/scripts/tinyfish/start-products.ts" | tee "$LOGS/tinyfish-products.log"; then
     red "  TinyFish products did not start. TinyPipe must be healthy on :3712 before sign-in and the cards work."
@@ -224,13 +233,24 @@ $(green "Ready. http://localhost:$APP_PORT")
 Sign in first:             http://localhost:$APP_PORT/sign
   TinyPipe must be healthy. Paste tfk.alice (creates tfu_alice).
 
-TinyFish cards iframe the UI; agents call /api/products/<slug>/* (TinyPipe first):
+Board cards iframe the UI (TinyPing first). Agents call /api/products/<slug>/*.
+Platform backends still start and proxy (TinyPipe first):
+
+  - TinyPing:              http://127.0.0.1:18101/ui  /api/products/tinyping/…
+  - TinyTrigger:           http://127.0.0.1:18081/    /api/products/tinytrigger/…
+  - TinyReg:               http://127.0.0.1:18102/ui  /api/products/tinyreg/…
+  - TinyScout:             http://127.0.0.1:18103/ui  /api/products/tinyscout/…
+  - TinyBrief:             http://127.0.0.1:18104/ui  /api/products/tinybrief/…
+  - TinyDeed:              http://127.0.0.1:18105/ui  /api/products/tinydeed/…
+  - TinyFeed:              http://127.0.0.1:18082/ui  /api/products/tinyfeed/…
+  - TinyFoundry:           http://127.0.0.1:18106/ui  /api/products/tinyfoundry/…
+  - TinyMargin:            http://127.0.0.1:18107/ui  /api/products/tinymargin/…
+  - TinyAtlas:             http://127.0.0.1:18108/ui  /api/products/tinyatlas/…
+  - TinyPrior:             http://127.0.0.1:18109/ui  /api/products/tinyprior/…
 
   - TinyPipe:              http://127.0.0.1:3712/ui   POST /api/products/tinypipe/mcp
   - TinyTail:              http://127.0.0.1:18765/ui  GET  /api/products/tinytail/v1/as-of
-  - TinyPulse:             http://127.0.0.1:18082/ui  /api/products/tinypulse/…
   - TinyWeb:               http://127.0.0.1:18766/ui  /api/products/tinyweb/…
-  - TinyWatch:             http://127.0.0.1:18081/    /api/products/tinywatch/…
   - TinyKit:               http://127.0.0.1:18083/    /api/products/tinykit/…
 
 Next steps:

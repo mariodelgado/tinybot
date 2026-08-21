@@ -1,32 +1,57 @@
-# One channel per TinyFish product. Package-provided, public, and open to all.
+# One channel per board product. Package-provided, public, and open to all.
 channels:
-  - id: tinypipe
-    name: TinyPipe
-    description: Auth + usage. TinyFish MCP auth and credit-pool metering.
-    permitted_agents: [tinypipe]
+  - id: tinyping
+    name: TinyPing
+    description: Funnel first.
+    permitted_agents: [tinyping]
     allowed_groups: [all]
-  - id: tinytail
-    name: TinyTail
-    description: As-of Explorer. Long-tail facts; read-only.
-    permitted_agents: [tinytail]
-    allowed_groups: [all]
-  - id: tinypulse
-    name: TinyPulse
-    description: Event Feed. NE Asia LNG physical events; graph is read-only.
-    permitted_agents: [tinypulse]
-    allowed_groups: [all]
-  - id: tinyweb
-    name: TinyWeb
-    description: Governed Fetch. Deny-list still wins.
-    permitted_agents: [tinyweb]
-    allowed_groups: [all]
-  - id: tinywatch
-    name: TinyWatch
+  - id: tinytrigger
+    name: TinyTrigger
     description: Watch / When / Do. T1 required.
-    permitted_agents: [tinywatch]
+    permitted_agents: [tinytrigger]
     allowed_groups: [all]
-  - id: tinykit
-    name: TinyKit
-    description: Recipe Gallery. Failed evals cannot instantiate.
-    permitted_agents: [tinykit]
+  - id: tinyreg
+    name: TinyReg
+    description: Registry.
+    permitted_agents: [tinyreg]
+    allowed_groups: [all]
+  - id: tinyscout
+    name: TinyScout
+    description: Scout.
+    permitted_agents: [tinyscout]
+    allowed_groups: [all]
+  - id: tinybrief
+    name: TinyBrief
+    description: Brief.
+    permitted_agents: [tinybrief]
+    allowed_groups: [all]
+  - id: tinydeed
+    name: TinyDeed
+    description: Deed.
+    permitted_agents: [tinydeed]
+    allowed_groups: [all]
+  - id: tinyfeed
+    name: TinyFeed
+    description: Event feed. Graph is read-only.
+    permitted_agents: [tinyfeed]
+    allowed_groups: [all]
+  - id: tinyfoundry
+    name: TinyFoundry
+    description: Foundry.
+    permitted_agents: [tinyfoundry]
+    allowed_groups: [all]
+  - id: tinymargin
+    name: TinyMargin
+    description: Margin.
+    permitted_agents: [tinymargin]
+    allowed_groups: [all]
+  - id: tinyatlas
+    name: TinyAtlas
+    description: Atlas.
+    permitted_agents: [tinyatlas]
+    allowed_groups: [all]
+  - id: tinyprior
+    name: TinyPrior
+    description: Prior.
+    permitted_agents: [tinyprior]
     allowed_groups: [all]

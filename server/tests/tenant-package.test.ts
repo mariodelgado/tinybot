@@ -244,12 +244,17 @@ describe("tenant YAML validation", () => {
     expect(tenantPackage.themeCss).toBe("");
     expect(tenantPackage.checksum).toMatch(/^[a-f0-9]{64}$/);
     expect(tenantPackage.agents.map((agent) => agent.id)).toEqual([
-      "tinypipe",
-      "tinytail",
-      "tinypulse",
-      "tinyweb",
-      "tinywatch",
-      "tinykit",
+      "tinyping",
+      "tinytrigger",
+      "tinyreg",
+      "tinyscout",
+      "tinybrief",
+      "tinydeed",
+      "tinyfeed",
+      "tinyfoundry",
+      "tinymargin",
+      "tinyatlas",
+      "tinyprior",
     ]);
     expect(
       tenantPackage.agents.some((agent) =>
@@ -257,26 +262,26 @@ describe("tenant YAML validation", () => {
       ),
     ).toBe(false);
     expect(tenantPackage.agents).toContainEqual({
-      id: "tinypipe",
-      name: "TinyPipe",
-      title: "Auth + usage",
+      id: "tinyping",
+      name: "TinyPing",
+      title: "Funnel",
       roleDescription:
-        "Usage tf-03. TinyFish MCP auth and credit-pool metering. Fixture CIMD only. Tokens are opaque tfk.*. Do not invent a production issuer or JWKS.",
-      avatarSeed: "tinypipe",
+        "Usage tiny-ping. Funnel first. Do not invent a seventh platform product.",
+      avatarSeed: "tinyping",
       type: "built_in",
       configuration: {
         systemPrompt:
-          "You are TinyPipe, Auth + usage (tf-03). TinyFish MCP auth and credit-pool metering. Fixture CIMD only. Tokens are opaque tfk.*. Do not invent a production issuer or JWKS.",
+          "You are TinyPing (tiny-ping). Funnel first. Call this product through call_product_backend. Do not invent product routes.",
       },
     });
     expect(tenantPackage.channels).toContainEqual({
-      id: "tinypipe",
-      name: "TinyPipe",
-      description: "Auth + usage. TinyFish MCP auth and credit-pool metering.",
-      permittedAgents: ["tinypipe"],
+      id: "tinyping",
+      name: "TinyPing",
+      description: "Funnel first.",
+      permittedAgents: ["tinyping"],
       allowedGroups: ["all"],
     });
-    expect(tenantPackage.channels).toHaveLength(6);
+    expect(tenantPackage.channels).toHaveLength(11);
     expect(
       tenantPackage.channels.every(
         (channel) =>

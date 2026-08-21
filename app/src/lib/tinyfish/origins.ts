@@ -14,7 +14,7 @@ import {
   tinyFishProductUrl,
 } from "./stack";
 
-/** Mario's personal-org Fly Machines (sjc, one each, --ha=false). Not defaults. */
+/** Optional Fly Machine names (sjc, one each, --ha=false). Not defaults. */
 export const TINYFISH_FLY_MACHINES = {
   tinypipe: {
     app: "tf-tinypipe",
@@ -23,10 +23,19 @@ export const TINYFISH_FLY_MACHINES = {
     mcpInternal: "http://tf-tinypipe.internal:8080/mcp",
   },
   tinytail: { app: "tf-tinytail", url: "https://tf-tinytail.fly.dev" },
-  tinypulse: { app: "tf-tinypulse", url: "https://tf-tinypulse.fly.dev" },
   tinyweb: { app: "tf-tinyweb", url: "https://tf-tinyweb.fly.dev" },
-  tinywatch: { app: "tf-tinywatch", url: "https://tf-tinywatch.fly.dev" },
   tinykit: { app: "tf-tinykit", url: "https://tf-tinykit.fly.dev" },
+  tinyping: { app: "tf-tinyping", url: "https://tf-tinyping.fly.dev" },
+  tinytrigger: { app: "tf-tinytrigger", url: "https://tf-tinytrigger.fly.dev" },
+  tinyreg: { app: "tf-tinyreg", url: "https://tf-tinyreg.fly.dev" },
+  tinyscout: { app: "tf-tinyscout", url: "https://tf-tinyscout.fly.dev" },
+  tinybrief: { app: "tf-tinybrief", url: "https://tf-tinybrief.fly.dev" },
+  tinydeed: { app: "tf-tinydeed", url: "https://tf-tinydeed.fly.dev" },
+  tinyfeed: { app: "tf-tinyfeed", url: "https://tf-tinyfeed.fly.dev" },
+  tinyfoundry: { app: "tf-tinyfoundry", url: "https://tf-tinyfoundry.fly.dev" },
+  tinymargin: { app: "tf-tinymargin", url: "https://tf-tinymargin.fly.dev" },
+  tinyatlas: { app: "tf-tinyatlas", url: "https://tf-tinyatlas.fly.dev" },
+  tinyprior: { app: "tf-tinyprior", url: "https://tf-tinyprior.fly.dev" },
 } as const;
 
 export type EnvBag = Record<string, string | undefined>;
