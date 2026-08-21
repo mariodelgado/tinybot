@@ -21,9 +21,9 @@ Regenerate it with `bun run diagram` after changing anything it shows.
 | `supervisor`             | 4500 host / 4300 container | Creates, stops, resets, and lists per-Bot computer containers.                                                                              |
 | PostgreSQL with pgvector | 5432                       | Product data, audit rows, credentials, policy, grants, channels, components, connector state, and knowledge records.                        |
 | CopilotKit Intelligence  | external                   | Durable threads, memory, and realtime gateway.                                                                                              |
-| TinyPipe                 | 3712                       | TinyFish auth + metering (platform). `/ui` is the console; `/mcp` is the fixture-desk socket; `GET /health` is the probe. TinyBot agents call `POST /api/products/tinypipe/mcp`. |
-| TinyTail / TinyWeb / TinyKit | 18765 / 18766 / 18083 | Platform backends TinyBot still starts and proxies. Not start-page cards. |
-| TinyPing + 10 board products | 18101, 18081, 18102–18105, 18082, 18106–18109 | Start-page cards and empty-state agents (TinyPing first). Cards iframe the UI; agents use `/api/products/<slug>/*`. |
+| TinyPipe                 | 3712                       | TinyFish auth + metering (platform-capability primitive). Start-page card after TinyPrior. `/ui` is the console; `/mcp` is the fixture-desk socket; `GET /health` is the probe. TinyBot agents call `POST /api/products/tinypipe/mcp`. |
+| TinyTail / TinyWeb / TinyKit | 18765 / 18766 / 18083 | Platform-capability primitives (`kind: "platform"`). Start-page cards and empty-state agents after TinyPipe (which follows TinyPrior). |
+| TinyPing + 10 board products | 18101, 18081, 18102–18105, 18082, 18106–18109 | Board primitives on the start page and empty-state roster (TinyPing first). Cards iframe the UI; agents use `/api/products/<slug>/*`. |
 
 `scripts/start.sh` starts TinyPipe first, then the other TinyFish products (`docker-compose.tinyfish.yml` for buildable slugs, or a wrap of each product's latest compose), then PostgreSQL, `agent-computer`, `agent-bot`, `agent-langgraph`, and the supervisor through Docker Compose, then starts `server` and `app` on the host. Product source is fetched as a linked service (sibling or `.tinyfish-siblings/`), never vendored. README-only board repos are not a start failure.
 

@@ -241,7 +241,7 @@ agents:
     system_prompt: You are TinyPing (tiny-ping). Funnel first. Call this product through call_product_backend. Do not invent product routes.
 ```
 
-TinyBot's shipped package seeds the 11 board products as `built-in` agents (TinyPing first). Platform backends (TinyPipe, TinyTail, TinyWeb, TinyKit) are not empty-state agents. Do not invent AG-UI endpoints for those product UIs.
+TinyBot's shipped package seeds all 15 TinyX products as `built-in` agents (TinyPing first; TinyPipe, TinyTail, TinyWeb, TinyKit after TinyPrior). Platform products keep `kind: "platform"` in the stack catalog. Do not invent AG-UI endpoints for those product UIs.
 
 Each agent requires `id`, `name`, `title`, `role_description`, and `type`.
 

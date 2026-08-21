@@ -1,4 +1,4 @@
-# One channel per board product. Package-provided, public, and open to all.
+# One channel per TinyBot primitive. Package-provided, public, and open to all.
 channels:
   - id: tinyping
     name: TinyPing
@@ -54,4 +54,24 @@ channels:
     name: TinyPrior
     description: Prior.
     permitted_agents: [tinyprior]
+    allowed_groups: [all]
+  - id: tinypipe
+    name: TinyPipe
+    description: Auth + usage. TinyFish MCP auth and credit-pool metering.
+    permitted_agents: [tinypipe]
+    allowed_groups: [all]
+  - id: tinytail
+    name: TinyTail
+    description: As-of store. Read-only.
+    permitted_agents: [tinytail]
+    allowed_groups: [all]
+  - id: tinyweb
+    name: TinyWeb
+    description: Governed fetch. Deny-list wins.
+    permitted_agents: [tinyweb]
+    allowed_groups: [all]
+  - id: tinykit
+    name: TinyKit
+    description: Recipe gallery. Failed evals cannot instantiate.
+    permitted_agents: [tinykit]
     allowed_groups: [all]

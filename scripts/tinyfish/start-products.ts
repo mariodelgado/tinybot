@@ -1,10 +1,11 @@
 /**
  * Start TinyFish products with unique host ports. TinyPipe is first.
  *
- * Board cards are the 11 products (TinyPing first). Platform backends
- * (TinyPipe, TinyTail, TinyWeb, TinyKit) still start and proxy. Products are
- * linked services. Wrap latest compose from a sibling or `.tinyfish-siblings/`
- * clone. Fallback: git-context overlay. A README-only sibling is not a failure.
+ * Start-page primitives are all 15 TinyX products (TinyPing first; Pipe, Tail,
+ * Web, Kit after Prior). Platform products keep `kind: "platform"` and still
+ * boot TinyPipe-first. Products are linked services. Wrap latest compose from a
+ * sibling or `.tinyfish-siblings/` clone. Fallback: git-context overlay. A
+ * README-only sibling is not a failure.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -17,8 +18,7 @@ import {
   resolveProductHealthUrl,
 } from "../../app/src/lib/tinyfish/origins";
 import {
-  boardProductsInStartOrder,
-  platformProductsInStartOrder,
+  primitiveProductsInCardOrder,
   productsInStartOrder,
   TINYFISH_FIXTURE_ISSUER,
   TINYPIPE_MCP_URL,
@@ -454,12 +454,10 @@ async function main() {
     }
   }
 
-  info("Board cards (TinyPing first):");
-  for (const product of boardProductsInStartOrder()) {
-    info(`  ${product.title}: ${resolveProductCardUrl(product, process.env)}`);
-  }
-  info("Platform backends:");
-  for (const product of platformProductsInStartOrder()) {
+  info(
+    "Start-page primitives (TinyPing first; Pipe, Tail, Web, Kit after Prior):",
+  );
+  for (const product of primitiveProductsInCardOrder()) {
     info(`  ${product.title}: ${resolveProductCardUrl(product, process.env)}`);
   }
 }

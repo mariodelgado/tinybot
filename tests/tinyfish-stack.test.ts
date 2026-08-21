@@ -7,6 +7,7 @@ import {
   boardProductsInStartOrder,
   duplicateNumbers,
   platformProductsInStartOrder,
+  primitiveProductsInCardOrder,
   productsInStartOrder,
   TINYBOT_HOST_PORTS,
   TINYFISH_FIXTURE_ISSUER,
@@ -40,9 +41,9 @@ test("TinyBot and product host ports are unique", () => {
   });
 });
 
-test("board is 11 cards TinyPing first; platform backends are not cards", () => {
+test("all 15 TinyX products are start-page primitives; platform kind stays platform", () => {
   expect(TINYFISH_PRODUCTS).toHaveLength(15);
-  expect(TINYFISH_APPS).toHaveLength(11);
+  expect(TINYFISH_APPS).toHaveLength(15);
   expect(boardProductsInStartOrder().map((product) => product.slug)).toEqual([
     "tinyping",
     "tinytrigger",
@@ -58,6 +59,28 @@ test("board is 11 cards TinyPing first; platform backends are not cards", () => 
   ]);
   expect(platformProductsInStartOrder().map((product) => product.slug)).toEqual(
     ["tinypipe", "tinytail", "tinyweb", "tinykit"],
+  );
+  expect(primitiveProductsInCardOrder().map((product) => product.slug)).toEqual(
+    [
+      "tinyping",
+      "tinytrigger",
+      "tinyreg",
+      "tinyscout",
+      "tinybrief",
+      "tinydeed",
+      "tinyfeed",
+      "tinyfoundry",
+      "tinymargin",
+      "tinyatlas",
+      "tinyprior",
+      "tinypipe",
+      "tinytail",
+      "tinyweb",
+      "tinykit",
+    ],
+  );
+  expect(TINYFISH_APPS.map((app) => app.slug)).toEqual(
+    primitiveProductsInCardOrder().map((product) => product.slug),
   );
   expect(platformProductsInStartOrder().map((product) => product.repo)).toEqual(
     [
@@ -84,12 +107,16 @@ test("board is 11 cards TinyPing first; platform backends are not cards", () => 
       `http://127.0.0.1:${product.hostPort}/health`,
     );
     const card = TINYFISH_APPS.find((app) => app.slug === product.slug);
-    if (product.kind === "board") {
-      expect(card?.defaultUrl).toBe(tinyFishProductUrl(product));
-    } else {
-      expect(card).toBeUndefined();
+    expect(card?.defaultUrl).toBe(tinyFishProductUrl(product));
+    if (product.kind === "platform") {
+      expect(product.kind).toBe("platform");
     }
   }
+  expect(
+    platformProductsInStartOrder().every(
+      (product) => product.kind === "platform",
+    ),
+  ).toBe(true);
 
   expect(tinyFishProductBySlugPort("tinytrigger")).toBe(18081);
   expect(tinyFishProductBySlugPort("tinyfeed")).toBe(18082);

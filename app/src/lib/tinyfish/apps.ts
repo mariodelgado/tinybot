@@ -1,9 +1,11 @@
 /**
  * TinyFish product catalog shown on the TinyBot start page.
  *
- * Defaults are the remapped TinyBot host ports. Override with
- * `TINYFISH_<SLUG>_URL` or `VITE_TINYFISH_<USAGE>_URL` (Fly). Cards show
- * Unreachable if that process is down; they still open the shell route.
+ * One card per TinyBot primitive: the eleven board products, then TinyPipe,
+ * TinyTail, TinyWeb, TinyKit after TinyPrior. Defaults are the remapped TinyBot
+ * host ports. Override with `TINYFISH_<SLUG>_URL` or `VITE_TINYFISH_<USAGE>_URL`
+ * (Fly). Cards show Unreachable if that process is down; they still open the
+ * shell route.
  */
 
 import {
@@ -12,7 +14,7 @@ import {
   resolveProductHealthUrl,
 } from "./origins";
 import {
-  boardProductsInStartOrder,
+  primitiveProductsInCardOrder,
   type TinyFishUsageId,
   tinyFishProductBySlug,
   tinyFishProductUrl,
@@ -31,7 +33,7 @@ export type TinyFishApp = {
 };
 
 export const TINYFISH_APPS: readonly TinyFishApp[] =
-  boardProductsInStartOrder().map((product) => ({
+  primitiveProductsInCardOrder().map((product) => ({
     usageId: product.usageId,
     slug: product.slug,
     title: product.title,

@@ -8,7 +8,7 @@ New board repos may still be README-only. Cards may show Unreachable. Do not fai
 
 ## Board (start-page cards + empty-state agents)
 
-TinyPing is first (funnel). These 11 are the start-page cards and the package-provided default agents.
+TinyPing is first (funnel). These 11 board products are start-page cards and package-provided default agents. The four platform products follow them on the same roster (see below).
 
 | slug | usage | compose service | native port | host port | UI | health |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -26,9 +26,9 @@ TinyPing is first (funnel). These 11 are the start-page cards and the package-pr
 
 TinyTrigger keeps host port 18081 (was `tf-01-trigger-rules`). TinyFeed keeps 18082 (was `js-02-physical-events`). New slugs use 18101+. Extra host publishes (TinyFeed 8081/8090, TinyTrigger webhook 8081) stay unpublished on the host so wrap does not pick webhook or postgres.
 
-## Platform (start + proxy, not start-page cards)
+## Platform (start-page primitives; `kind` stays platform-capability)
 
-These stay backends TinyBot can start and proxy. They are not start-page cards and not empty-state agents.
+These keep `kind: "platform"` in the stack catalog. They are still TinyBot primitives: start-page cards, empty-state agents, and start/proxy backends. Card order is after TinyPrior: TinyPipe, TinyTail, TinyWeb, TinyKit. Boot order is unchanged (TinyPipe first).
 
 | slug | usage | compose service | native port | host port | UI | health |
 | --- | --- | --- | --- | --- | --- | --- |

@@ -1,7 +1,7 @@
-# Package-provided TinyFish board. Public, ownerless, and built-in so they
-# are reachable the moment the deployment starts. Empty-state agents are these
-# 11 (TinyPing first), not OpenBot samples and not the platform backends.
-# Platform (TinyPipe, TinyTail, TinyWeb, TinyKit) stay startable/proxyable.
+# Package-provided TinyFish primitives. Public, ownerless, and built-in so they
+# are reachable the moment the deployment starts. Empty-state agents are all 15
+# TinyX products (TinyPing first; Pipe, Tail, Web, Kit after Prior), not OpenBot
+# samples. Platform products keep kind "platform" and still appear here.
 agents:
   - id: tinyping
     name: TinyPing
@@ -80,3 +80,31 @@ agents:
     avatar_seed: tinyprior
     type: built-in
     system_prompt: "You are TinyPrior (tiny-prior). Call this product through call_product_backend. Do not invent product routes."
+  - id: tinypipe
+    name: TinyPipe
+    title: Auth + usage
+    role_description: "Usage tf-03. Auth + usage. Fixture CIMD. Tokens are opaque tfk.*. Call this product through call_product_backend."
+    avatar_seed: tinypipe
+    type: built-in
+    system_prompt: "You are TinyPipe (tf-03). Auth + usage. Fixture CIMD. Tokens are opaque tfk.*. Call this product through call_product_backend. POST /mcp."
+  - id: tinytail
+    name: TinyTail
+    title: As-of store
+    role_description: "Usage js-01. As-of store. Read-only. Call this product through call_product_backend. GET /v1/as-of."
+    avatar_seed: tinytail
+    type: built-in
+    system_prompt: "You are TinyTail (js-01). As-of store. Read-only. Call this product through call_product_backend. GET /v1/as-of."
+  - id: tinyweb
+    name: TinyWeb
+    title: Governed fetch
+    role_description: "Usage js-03. Governed fetch. Deny-list wins. Call this product through call_product_backend."
+    avatar_seed: tinyweb
+    type: built-in
+    system_prompt: "You are TinyWeb (js-03). Governed fetch. Deny-list wins. Call this product through call_product_backend."
+  - id: tinykit
+    name: TinyKit
+    title: Recipe gallery
+    role_description: "Usage tf-02. Recipe gallery. Failed evals cannot instantiate. Call this product through call_product_backend."
+    avatar_seed: tinykit
+    type: built-in
+    system_prompt: "You are TinyKit (tf-02). Recipe gallery. Failed evals cannot instantiate. Call this product through call_product_backend."
