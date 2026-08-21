@@ -128,20 +128,17 @@ test("isConsumeContractPr matches TINYBOT.md files or title", () => {
 });
 
 test("resolveProductCheckoutRef falls back to main when GitHub is unavailable", async () => {
-  const choice = await resolveProductCheckoutRef(
-    "mariodelgado/tiny-pipe",
-    {
-      defaultBranch: async () => {
-        throw new Error("offline");
-      },
-      hasFile: async () => {
-        throw new Error("offline");
-      },
-      listOpenPrs: async () => {
-        throw new Error("offline");
-      },
+  const choice = await resolveProductCheckoutRef("mariodelgado/tiny-pipe", {
+    defaultBranch: async () => {
+      throw new Error("offline");
     },
-  );
+    hasFile: async () => {
+      throw new Error("offline");
+    },
+    listOpenPrs: async () => {
+      throw new Error("offline");
+    },
+  });
   expect(choice).toEqual({ ref: "main", source: "default" });
 });
 
@@ -153,13 +150,9 @@ test("owned sibling cache is only .tinyfish-siblings", () => {
       {},
     ),
   ).toBe(true);
-  expect(
-    isOwnedSiblingCache(
-      "/workspace/../tiny-pipe",
-      "/workspace",
-      {},
-    ),
-  ).toBe(false);
+  expect(isOwnedSiblingCache("/workspace/../tiny-pipe", "/workspace", {})).toBe(
+    false,
+  );
 });
 
 test("Fly / env overrides change origin; unset stays on localhost remap", () => {

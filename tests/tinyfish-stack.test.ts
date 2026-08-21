@@ -59,14 +59,14 @@ test("board is 11 cards TinyPing first; platform backends are not cards", () => 
   expect(platformProductsInStartOrder().map((product) => product.slug)).toEqual(
     ["tinypipe", "tinytail", "tinyweb", "tinykit"],
   );
-  expect(
-    platformProductsInStartOrder().map((product) => product.repo),
-  ).toEqual([
-    "mariodelgado/tiny-pipe",
-    "mariodelgado/tiny-tail",
-    "mariodelgado/tiny-web",
-    "mariodelgado/tiny-kit",
-  ]);
+  expect(platformProductsInStartOrder().map((product) => product.repo)).toEqual(
+    [
+      "mariodelgado/tiny-pipe",
+      "mariodelgado/tiny-tail",
+      "mariodelgado/tiny-web",
+      "mariodelgado/tiny-kit",
+    ],
+  );
   expect(
     TINYFISH_PRODUCTS.some((product) => product.slug === "tinywatch"),
   ).toBe(false);
@@ -250,13 +250,9 @@ test("start-products waits on GET /health and does not fail README-only siblings
 });
 
 test("sibling checkouts stay outside the TinyBot tree unless cached gitignored", () => {
-  const dirs = candidateCheckoutDirs(
-    "/workspace",
-    "mariodelgado/tiny-pipe",
-    {
-      TINYFISH_SIBLINGS_DIR: "/tmp/tinyfish-siblings",
-    },
-  );
+  const dirs = candidateCheckoutDirs("/workspace", "mariodelgado/tiny-pipe", {
+    TINYFISH_SIBLINGS_DIR: "/tmp/tinyfish-siblings",
+  });
   expect(dirs).toEqual([
     "/tmp/tinyfish-siblings/tiny-pipe",
     "/workspace/../tiny-pipe",
