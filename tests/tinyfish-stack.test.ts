@@ -135,53 +135,77 @@ test("TinyPipe starts first and remains the auth socket on 3712", () => {
   expect(TINYFISH_FIXTURE_ISSUER).toBe("https://issuer.fixtures.tinyfish.test");
 });
 
-test("compose overlay publishes buildable products on remapped loopback ports", () => {
+test("compose overlay publishes all 15 products on remapped loopback ports", () => {
   const compose = readFileSync(
     join(root, "docker-compose.tinyfish.yml"),
     "utf8",
   );
   const published = hostPortsFromComposeYaml(compose);
 
-  expect(published).toEqual([3712, 18765, 18766, 18083, 18081, 18082]);
+  expect(TINYFISH_PRODUCTS).toHaveLength(15);
+  expect(published).toHaveLength(15);
+  expect(new Set(published)).toEqual(
+    new Set(TINYFISH_PRODUCTS.map((product) => product.hostPort)),
+  );
   expect(duplicateNumbers(published)).toEqual([]);
   expect(
     published.some((port) => Object.values(TINYBOT_HOST_PORTS).includes(port)),
   ).toBe(false);
 
-  const overlaySlugs = [
-    "tinypipe",
-    "tinytail",
-    "tinyweb",
-    "tinykit",
-    "tinytrigger",
-    "tinyfeed",
-  ];
-  for (const slug of overlaySlugs) {
-    const product = TINYFISH_PRODUCTS.find((item) => item.slug === slug);
-    if (!product) throw new Error(`${slug} missing`);
+  for (const product of TINYFISH_PRODUCTS) {
     expect(compose).toContain(
       `\${${product.hostPortEnv}:-${product.hostPort}}:\${${product.nativePortEnv}:-${product.nativePort}}`,
     );
     expect(compose).toContain(`https://github.com/${product.repo}.git`);
-    expect(compose).toContain(`${product.slug}:`);
+    expect(compose).toMatch(new RegExp(`^  ${product.slug}:`, "m"));
   }
 
   expect(compose).not.toContain("tinypulse");
   expect(compose).not.toContain("tinywatch");
   expect(compose).toContain("depends_on:");
-  expect(compose.match(/depends_on:\n\s+- tinypipe/g)?.length).toBe(5);
+  expect(compose.match(/depends_on:\n\s+- tinypipe/g)?.length).toBe(14);
   expect(compose).toContain("TINYFISH_MCP_URL");
   expect(compose).not.toContain("record_usage");
+});
+
+test("all 15 compose services are remappable onto their host ports", () => {
+  expect(TINYFISH_PRODUCTS).toHaveLength(15);
+  for (const product of TINYFISH_PRODUCTS) {
+    const rewritten = remapComposeServices(
+      {
+        [product.composeService]: {
+          ports: [`${product.nativePort}:${product.nativePort}`],
+        },
+        webhook: { ports: ["8081:8081"] },
+        postgres: { ports: ["5432:5432"] },
+      },
+      product,
+    );
+    expect(rewritten[product.composeService]?.ports).toEqual([
+      uiPublishBinding(product),
+    ]);
+    expect(rewritten.webhook?.ports).toBeUndefined();
+    expect(rewritten.postgres?.ports).toBeUndefined();
+  }
 });
 
 test("catalog uses the verified compose service and GET /health", () => {
   const expected = {
     tinypipe: { composeService: "tinyfish-web", hostPort: 3712 },
     tinytail: { composeService: "ltdf", hostPort: 18765 },
-    tinyfeed: { composeService: "feed", hostPort: 18082 },
     tinyweb: { composeService: "tinyfish-web", hostPort: 18766 },
-    tinytrigger: { composeService: "engine", hostPort: 18081 },
     tinykit: { composeService: "gallery", hostPort: 18083 },
+    tinyping: { composeService: "tinyping", hostPort: 18101 },
+    tinytrigger: { composeService: "engine", hostPort: 18081 },
+    tinyreg: { composeService: "tinyreg", hostPort: 18102 },
+    tinyscout: { composeService: "tinyscout", hostPort: 18103 },
+    tinybrief: { composeService: "tinybrief", hostPort: 18104 },
+    tinydeed: { composeService: "tinydeed", hostPort: 18105 },
+    tinyfeed: { composeService: "feed", hostPort: 18082 },
+    tinyfoundry: { composeService: "tinyfoundry", hostPort: 18106 },
+    tinymargin: { composeService: "tinymargin", hostPort: 18107 },
+    tinyatlas: { composeService: "tinyatlas", hostPort: 18108 },
+    tinyprior: { composeService: "tinyprior", hostPort: 18109 },
   } as const;
 
   for (const [slug, want] of Object.entries(expected)) {
@@ -287,6 +311,31 @@ test("sibling checkouts stay outside the TinyBot tree unless cached gitignored",
   ]);
 });
 
+const UNDEPLOYED_BOARD_SLUGS = [
+  "tinyping",
+  "tinyreg",
+  "tinyscout",
+  "tinybrief",
+  "tinydeed",
+  "tinyfoundry",
+  "tinymargin",
+  "tinyatlas",
+  "tinyprior",
+] as const;
+
+test("documents TINYFISH_<SLUG>_URL for the 9 board apps not on Fly yet", () => {
+  const envExample = readFileSync(join(root, ".env.example"), "utf8");
+  const tinybot = readFileSync(join(root, "TINYBOT.md"), "utf8");
+  const start = readFileSync(join(root, "scripts/start.sh"), "utf8");
+  expect(UNDEPLOYED_BOARD_SLUGS).toHaveLength(9);
+  for (const slug of UNDEPLOYED_BOARD_SLUGS) {
+    const key = `TINYFISH_${slug.toUpperCase()}_URL`;
+    expect(envExample).toContain(key);
+    expect(tinybot).toContain(key);
+    expect(start).toContain(key);
+  }
+});
+
 test("start.sh brings TinyPipe up first and wires the fixture MCP URL", () => {
   const start = readFileSync(join(root, "scripts/start.sh"), "utf8");
   expect(start).toContain("scripts/tinyfish/start-products.ts");
@@ -297,6 +346,8 @@ test("start.sh brings TinyPipe up first and wires the fixture MCP URL", () => {
     start.indexOf("docker compose up"),
   );
   expect(start).toContain("TINYFISH_TINYPING_URL");
+  expect(start).toContain("TINYFISH_TINYREG_URL");
+  expect(start).toContain("TINYFISH_TINYPRIOR_URL");
   expect(start).toContain("VITE_TINYFISH_TINY_PING_URL");
   expect(start).not.toContain("TINYPULSE");
   expect(start).not.toContain("TINYWATCH");

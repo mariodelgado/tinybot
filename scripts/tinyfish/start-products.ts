@@ -4,8 +4,8 @@
  * Start-page primitives are all 15 TinyX products (TinyPing first; Pipe, Tail,
  * Web, Kit after Prior). Platform products keep `kind: "platform"` and still
  * boot TinyPipe-first. Products are linked services. Wrap latest compose from a
- * sibling or `.tinyfish-siblings/` clone. Fallback: git-context overlay. A
- * README-only sibling is not a failure.
+ * sibling or `.tinyfish-siblings/` clone. Fallback: git-context overlay, which
+ * lists all 15 products. A README-only sibling is not a failure.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
