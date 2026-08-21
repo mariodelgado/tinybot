@@ -37,7 +37,7 @@ These stay backends TinyBot can start and proxy. They are not start-page cards a
 | tinyweb | js-03 | tinyfish-web | 8765 | 18766 | /ui | GET /health |
 | tinykit | tf-02 | gallery | 8080 | 18083 | / | GET /health |
 
-TinyPipe remains first in `start-products`. Platform usage ids stay `js-01`, `js-03`, `tf-02`, `tf-03`.
+TinyPipe remains first in `start-products`. Platform usage ids stay `js-01`, `js-03`, `tf-02`, `tf-03`. Sibling repos are `mariodelgado/tiny-pipe`, `tiny-tail`, `tiny-web`, and `tiny-kit`.
 
 Each product honors `PORT` and answers `GET /health` with `{ok, product, usage_id}`. Cards and `start.sh` probe that path on the remapped host port, not the UI path.
 

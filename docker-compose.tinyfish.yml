@@ -28,7 +28,7 @@ name: tinybot-tinyfish
 services:
   tinypipe:
     build:
-      context: https://github.com/mariodelgado/tf-03-mcp-distribution.git
+      context: https://github.com/mariodelgado/tiny-pipe.git
     ports:
       - "127.0.0.1:${TINYPIPE_HOST_PORT:-3712}:${TINYPIPE_PORT:-3712}"
     environment:
@@ -37,7 +37,7 @@ services:
 
   tinytail:
     build:
-      context: https://github.com/mariodelgado/js-01-long-tail-dataset.git
+      context: https://github.com/mariodelgado/tiny-tail.git
     depends_on:
       - tinypipe
     ports:
@@ -51,7 +51,7 @@ services:
 
   tinyweb:
     build:
-      context: https://github.com/mariodelgado/js-03-governed-web.git
+      context: https://github.com/mariodelgado/tiny-web.git
     depends_on:
       - tinypipe
     ports:
@@ -65,7 +65,7 @@ services:
 
   tinykit:
     build:
-      context: https://github.com/mariodelgado/tf-02-recipe-gallery.git
+      context: https://github.com/mariodelgado/tiny-kit.git
     depends_on:
       - tinypipe
     ports:

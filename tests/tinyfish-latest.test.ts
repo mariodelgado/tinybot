@@ -34,8 +34,10 @@ test("products are linked services: no vendor, submodule, or workspace install",
     ...Object.keys(pkg.dependencies ?? {}),
     ...Object.keys(pkg.devDependencies ?? {}),
   ].join(" ");
-  expect(names).not.toContain("js-01-long-tail-dataset");
-  expect(names).not.toContain("tf-03-mcp-distribution");
+  expect(names).not.toContain("tiny-tail");
+  expect(names).not.toContain("tiny-pipe");
+  expect(names).not.toContain("tiny-kit");
+  expect(names).not.toContain("tiny-web");
   expect(names).not.toContain("tinyfish-siblings");
 
   const gitignore = readFileSync(join(root, ".gitignore"), "utf8");
@@ -126,38 +128,31 @@ test("isConsumeContractPr matches TINYBOT.md files or title", () => {
 });
 
 test("resolveProductCheckoutRef falls back to main when GitHub is unavailable", async () => {
-  const choice = await resolveProductCheckoutRef(
-    "mariodelgado/tf-03-mcp-distribution",
-    {
-      defaultBranch: async () => {
-        throw new Error("offline");
-      },
-      hasFile: async () => {
-        throw new Error("offline");
-      },
-      listOpenPrs: async () => {
-        throw new Error("offline");
-      },
+  const choice = await resolveProductCheckoutRef("mariodelgado/tiny-pipe", {
+    defaultBranch: async () => {
+      throw new Error("offline");
     },
-  );
+    hasFile: async () => {
+      throw new Error("offline");
+    },
+    listOpenPrs: async () => {
+      throw new Error("offline");
+    },
+  });
   expect(choice).toEqual({ ref: "main", source: "default" });
 });
 
 test("owned sibling cache is only .tinyfish-siblings", () => {
   expect(
     isOwnedSiblingCache(
-      "/workspace/.tinyfish-siblings/tf-03-mcp-distribution",
+      "/workspace/.tinyfish-siblings/tiny-pipe",
       "/workspace",
       {},
     ),
   ).toBe(true);
-  expect(
-    isOwnedSiblingCache(
-      "/workspace/../tf-03-mcp-distribution",
-      "/workspace",
-      {},
-    ),
-  ).toBe(false);
+  expect(isOwnedSiblingCache("/workspace/../tiny-pipe", "/workspace", {})).toBe(
+    false,
+  );
 });
 
 test("Fly / env overrides change origin; unset stays on localhost remap", () => {
