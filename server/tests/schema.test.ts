@@ -22,11 +22,25 @@ import {
   sessions,
   syncRuns,
   userRoles,
+  userSprites,
   users,
   verifications,
 } from "../src/db/schema";
 
 describe("OpenBot database schema", () => {
+  test("stores one Sprite assignment per TinyFish user", () => {
+    expect(getTableName(userSprites)).toBe("user_sprites");
+    expect(Object.keys(userSprites)).toEqual(
+      expect.arrayContaining([
+        "userId",
+        "spriteName",
+        "spriteId",
+        "spriteUrl",
+        "status",
+      ]),
+    );
+  });
+
   test("defines the core runtime records", () => {
     expect(
       [
@@ -298,6 +312,23 @@ describe("OpenBot database schema", () => {
    * says so, because the alternative failure is silent: the code reads a column the deployment
    * does not have.
    */
+  test("adds per-user Sprite rows in their own migration", async () => {
+    const migration = await readFile(
+      new URL("../drizzle/0002_user_sprites.sql", import.meta.url),
+      "utf8",
+    );
+    expect(migration).toContain(`CREATE TABLE "user_sprites"`);
+    expect(migration).toContain(`"sprite_name" text NOT NULL`);
+    expect(migration).toContain(
+      `FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade`,
+    );
+    const base = await readFile(
+      new URL("../drizzle/0000_schema.sql", import.meta.url),
+      "utf8",
+    );
+    expect(base).not.toContain("user_sprites");
+  });
+
   test("adds the callback token columns in their own migration", async () => {
     const migration = await readFile(
       new URL("../drizzle/0001_swift_morph.sql", import.meta.url),

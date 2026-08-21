@@ -36,46 +36,44 @@ All four Intelligence values are required together. Missing any of them stops se
 | `NODE_ENV`           | unset                              | `production` enables startup refusals for local-only settings.      |
 | `TENANT_PACKAGE_DIR` | `../examples/fintech`              | Tenant package directory, resolved from `server/`.                  |
 | `DEPLOYMENT_ID`      | the tenant package's id            | Names this deployment inside a shared Intelligence project.          |
-| `OPENAI_API_KEY`     | unset                              | Default model key for built-in agents and both shipped Bots.        |
-| `OPENAI_BASE_URL`    | unset                              | OpenAI-compatible endpoint that key is spent against. See below.    |
-| `BOT_PROVIDER`       | `openai`                           | Provider for `agent-langgraph`: `openai`, `anthropic`, or `google`. |
+| `OPENROUTER_API_KEY` | unset                              | TinyBot inference key. Preferred. Never commit a real key.          |
+| `OPENAI_API_KEY`     | unset                              | Accepted for OpenRouter only when `OPENAI_BASE_URL` already points at openrouter.ai, or for a local/dev gateway when the OpenRouter key is unset. |
+| `OPENAI_BASE_URL`    | `https://openrouter.ai/api/v1` when `OPENROUTER_API_KEY` is set | OpenAI-compatible endpoint that key is spent against. See below.    |
+| `BOT_PROVIDER`       | `openai`                           | Provider for `agent-langgraph`: `openai`, `anthropic`, or `google`. OpenRouter is OpenAI-shaped, so this stays `openai`. |
 | `ANTHROPIC_API_KEY`  | unset                              | Anthropic key when `BOT_PROVIDER=anthropic`.                        |
 | `ANTHROPIC_BASE_URL` | unset                              | Anthropic-compatible endpoint that key is spent against.            |
 | `GOOGLE_API_KEY`     | unset                              | Google key when `BOT_PROVIDER=google`.                              |
 | `GOOGLE_GENERATIVE_AI_BASE_URL` | unset                   | Google-compatible endpoint that key is spent against.               |
-| `BOT_MODEL`          | provider default from Bot code/env | Model used by the shipped Bots.                                     |
+| `BOT_MODEL`          | `stealth/ox-alpha`                 | Model used by the shipped Bots. OpenRouter default is Ox Alpha.     |
 | `BOT_RESPONSES_API`  | `false`                            | Makes `agent-langgraph` use the OpenAI Responses API.               |
 
-## OpenAI-compatible endpoints
+## OpenRouter inference
 
-`OPENAI_BASE_URL` decides where an OpenAI-shaped request is answered. Unset, that is OpenAI. Set, it is any endpoint speaking the same API: a gateway in front of several providers, a proxy, or a model on hardware you control.
+TinyBot chats through [OpenRouter](https://openrouter.ai)'s OpenAI-compatible API (`https://openrouter.ai/api/v1`). Set `OPENROUTER_API_KEY` and leave `BOT_PROVIDER=openai`. The key is sent as `Authorization: Bearer …` and is never logged.
 
-It moves the whole deployment rather than one Bot. The API server reads it for package built-in agents, `agent-bot` reads it for the client it constructs, and `agent-langgraph` reads it for `BOT_PROVIDER=openai`.
+Default model is Ox Alpha (`stealth/ox-alpha`). If that request fails — HTTP 5xx, 429, a provider error, or an empty/unavailable response — the same turn is retried once on Grok 4.6 (`x-ai/grok-4.6`). 401 and 403 are not retried (the key is wrong). Logs record which model served (`inference-served` / `inference-fallback`); they never include the key.
 
-The other two providers work the same way under their own names, because they are different APIs rather than different URLs for this one: `ANTHROPIC_BASE_URL` and `GOOGLE_GENERATIVE_AI_BASE_URL`. All three are the names the API server already reads, so one line moves the built-in agents and the Bots together and a deployment cannot end up with half of itself pointed somewhere else.
+When `OPENROUTER_API_KEY` is set, `scripts/start.sh` and the config loader force `OPENAI_BASE_URL=https://openrouter.ai/api/v1` and reuse the existing OpenAI-shaped client. There is no second HTTP client.
 
-Model names travel verbatim, so use whatever the endpoint publishes. An endpoint that namespaces its catalogue wants both halves of the name, in `BOT_MODEL` and in the tenant package's `default_model` alike.
-
-A gateway that fronts several providers behind one key is addressed the usual way:
+Without `OPENROUTER_API_KEY`, TinyBot stays on the local/dev OpenAI-compatible path (`OPENAI_API_KEY` + optional `OPENAI_BASE_URL`) and does not call openrouter.ai. `OPENAI_API_KEY` is accepted for OpenRouter only when `OPENAI_BASE_URL` already points at OpenRouter.
 
 ```sh
-OPENAI_BASE_URL=https://gateway.internal/v1
-OPENAI_API_KEY=...
-BOT_MODEL=openai/gpt-4o
+OPENROUTER_API_KEY=
+OPENAI_BASE_URL=https://openrouter.ai/api/v1
+BOT_PROVIDER=openai
+BOT_MODEL=stealth/ox-alpha
 ```
 
-and in the tenant package, where the name is namespaced the same way:
+and in the tenant package:
 
 ```yaml
 model:
   provider: openai
   credential_secret_ref: openai-api-key
-  default_model: openai/gpt-4o
+  default_model: stealth/ox-alpha
 ```
 
-Most gateways publish a model list, which is the way to check a name before configuring it.
-
-Two things are worth knowing before pointing a deployment at any gateway. Not every catalogue entry accepts tools, and a Bot without tool calling cannot drive its computer; the model list says which do. And `BOT_RESPONSES_API=true` needs an endpoint that implements the Responses API, not only chat completions.
+A non-OpenRouter gateway is still the existing path: leave `OPENROUTER_API_KEY` unset, set `OPENAI_BASE_URL` to that gateway, and send `BOT_MODEL` as the name that endpoint publishes. Not every catalogue entry accepts tools, and a Bot without tool calling cannot drive its computer. `BOT_RESPONSES_API=true` needs an endpoint that implements the Responses API, not only chat completions.
 
 ## Authentication
 
@@ -88,8 +86,17 @@ Two things are worth knowing before pointing a deployment at any gateway. Not ev
 | `BETTER_AUTH_URL`            | Public API server base URL. Required with Google OAuth.                                |
 | `TRUSTED_ORIGINS`            | Comma-separated app origins accepted by the API.                                       |
 | `INITIAL_ADMIN_EMAILS`       | Comma-separated users seeded as administrators.                                        |
+| `TINYFISH_MCP_URL`           | TinyPipe MCP URL. When set, TinyFish is the sign-in path. `start.sh` writes `http://127.0.0.1:3712/mcp`. Fly: `https://tf-tinypipe.fly.dev/mcp` or `http://tf-tinypipe.internal:8080/mcp`. |
+| `TINYFISH_ISSUER`            | Expected CIMD `iss`. Fixture: `https://issuer.fixtures.tinyfish.test`.                 |
+| `TINYFISH_<SLUG>_URL` / `VITE_TINYFISH_<USAGE>_URL` | Optional product origin (Fly). Cards and `/api/products/:slug/*` use it instead of localhost remap. Unset keeps `start.sh` local. |
+| `SPRITES_TOKEN` / `SPRITE_TOKEN` | Fly Sprites org token. When set, first TinyFish sign-in creates or reuses one Sprite per user. Unset keeps localhost compose. |
+| `SPRITES_API_URL`            | Sprites API base. Default `https://api.sprites.dev/v1`. Do not set in CI.              |
 
 Google OAuth client id and secret must be configured together. If Google OAuth is configured, `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` are also required.
+
+TinyFish sign-in verifies a Phase 1 `tfk.*` keyring token against TinyPipe. It does not fetch CIMD or JWKS, does not mint a verifier, and does not call `record_usage`. `tfk.alice` creates profile `tfu_alice`; a second login upserts that row. `tfk.exhausted` creates `tfu_exhausted` (valid login; exhausted is a credit gate). Non-fixture tokens are 401. TinyPipe must be healthy before `/sign` works. `OPENBOT_DEV_NO_AUTH` remains an escape hatch only when TinyPipe is not configured.
+
+When `SPRITES_TOKEN` or `SPRITE_TOKEN` is set, sign-in also ensures a Fly Sprite named from `tinyfish_user_id` (`tfu_alice` → `tinybot-tfu-alice`). Create uses `url_settings.auth = "sprite"`. A Fly failure is stored as sprite status `error` and does not block sign-in. Cards then load `/api/sprite/apps/<slug>/...` through TinyBot; a user can only proxy to their own Sprite. Without a token, cards stay on the remapped localhost ports.
 
 ## Computer and supervisor
 
@@ -155,6 +162,23 @@ When optional SPIRE services are used:
 | `agent-langgraph` | 4201                       | `LANGGRAPH_PORT`  |
 | `supervisor`      | 4500 host / 4300 container | `SUPERVISOR_PORT` |
 | PostgreSQL        | 5432                       | `POSTGRES_PORT`   |
+| TinyPipe          | 3712                       | `TINYPIPE_HOST_PORT` |
+| TinyTail          | 18765                      | `TINYTAIL_HOST_PORT` |
+| TinyWeb           | 18766                      | `TINYWEB_HOST_PORT` |
+| TinyKit           | 18083                      | `TINYKIT_HOST_PORT` |
+| TinyPing          | 18101                      | `TINYPING_HOST_PORT` |
+| TinyTrigger       | 18081                      | `TINYTRIGGER_HOST_PORT` |
+| TinyReg           | 18102                      | `TINYREG_HOST_PORT` |
+| TinyScout         | 18103                      | `TINYSCOUT_HOST_PORT` |
+| TinyBrief         | 18104                      | `TINYBRIEF_HOST_PORT` |
+| TinyDeed          | 18105                      | `TINYDEED_HOST_PORT` |
+| TinyFeed          | 18082                      | `TINYFEED_HOST_PORT` |
+| TinyFoundry       | 18106                      | `TINYFOUNDRY_HOST_PORT` |
+| TinyMargin        | 18107                      | `TINYMARGIN_HOST_PORT` |
+| TinyAtlas         | 18108                      | `TINYATLAS_HOST_PORT` |
+| TinyPrior         | 18109                      | `TINYPRIOR_HOST_PORT` |
+
+TinyFish product ports are published by wrapping the named compose service or by `docker-compose.tinyfish.yml` when that overlay lists the slug. Native container ports stay 3712 / 8765 / 8080; only the host side is remapped. Extra publishes (TinyFeed 8081/8090, TinyTrigger webhook) stay unpublished. Cards and start wait on `GET /health`. Agents call `/api/products/<slug>/*`. Details: [TINYBOT.md](../TINYBOT.md).
 
 Set these in `.env` or in the environment. `docker-compose.yml` publishes on them and
 `scripts/start.sh` reads the same names to decide where to look, so one setting moves a service and
@@ -190,7 +214,7 @@ examples/fintech/
 ```yaml
 tenant:
   id: openbot
-  product_name: OpenBot
+  product_name: TinyBot
 ```
 
 Optional theme:
@@ -206,21 +230,16 @@ Theme CSS may define only `:root` and `.dark` blocks, approved theme variables, 
 
 ```yaml
 agents:
-  - id: knowledge
-    name: Knowledge
-    title: Company Knowledge
-    role_description: Answer company knowledge questions and cite sources.
-    avatar_seed: knowledge
+  - id: tinyping
+    name: TinyPing
+    title: Funnel
+    role_description: Usage tiny-ping. Funnel first. Do not invent a seventh platform product.
+    avatar_seed: tinyping
     type: built-in
-    system_prompt: Answer from authorized company knowledge and cite every source.
-
-  - id: risk-analyst
-    name: Risk Analyst
-    title: Risk & Compliance
-    role_description: Investigate policies and controls.
-    type: remote-ag-ui
-    endpoint: ${MANAGED_AGENT_AG_UI_URL}
+    system_prompt: You are TinyPing (tiny-ping). Funnel first. Call this product through call_product_backend. Do not invent product routes.
 ```
+
+TinyBot's shipped package seeds the 11 board products as `built-in` agents (TinyPing first). Platform backends (TinyPipe, TinyTail, TinyWeb, TinyKit) are not empty-state agents. Do not invent AG-UI endpoints for those product UIs.
 
 Each agent requires `id`, `name`, `title`, `role_description`, and `type`.
 
@@ -239,12 +258,14 @@ message saying which file wanted it, rather than leaving a Bot pointed at an add
 
 ```yaml
 channels:
-  - id: risk-and-compliance
-    name: Risk & Compliance
-    description: Investigate policies and controls.
-    permitted_agents: [knowledge, risk-analyst]
-    allowed_groups: [risk, compliance]
+  - id: tinypipe
+    name: TinyPipe
+    description: Auth + usage. TinyFish MCP auth and credit-pool metering.
+    permitted_agents: [tinypipe]
+    allowed_groups: [all]
 ```
+
+TinyBot's shipped package has one channel per product, each permitting only that product's agent.
 
 Each channel requires `id`, `name`, `description`, `permitted_agents`, and `allowed_groups`. Every `permitted_agents` entry must match an agent id.
 
@@ -254,10 +275,10 @@ Each channel requires `id`, `name`, `description`, `permitted_agents`, and `allo
 model:
   provider: openai
   credential_secret_ref: openai-api-key
-  default_model: gpt-4.1
+  default_model: stealth/ox-alpha
 ```
 
-`provider` must be `openai`. `credential_secret_ref` is a reference to a stored credential, not a credential value. `default_model` is passed through as written, so an OpenAI-compatible endpoint reached through `OPENAI_BASE_URL` takes the name that endpoint publishes.
+`provider` must be `openai`. `credential_secret_ref` is a reference to a stored credential, not a credential value. `default_model` is passed through as written. TinyBot's shipped package uses OpenRouter Ox Alpha (`stealth/ox-alpha`).
 
 ### `knowledge.yaml`
 

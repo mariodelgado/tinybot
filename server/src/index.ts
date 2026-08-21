@@ -1,6 +1,6 @@
 import { serve } from "bun";
-import { createAgentProfileStore } from "./agents/profile-store";
 import { mintRunAssertion } from "./agents/callback-token";
+import { createAgentProfileStore } from "./agents/profile-store";
 import { createRuntimeAgentLoader } from "./agents/runtime-agents";
 import { createApp } from "./app";
 import { createAuditReader, createAuditStore, recordAuditEvent } from "./audit";
@@ -8,14 +8,15 @@ import { createAuth } from "./auth";
 import { DEV_ACTOR, initializeDevActorUser } from "./auth/dev-actor";
 import { createRoleRepository } from "./auth/guards";
 import type { OpenBotRole } from "./auth/roles";
+import { createConfiguredTinyFishAuth } from "./auth/tinyfish";
 import {
   createChannelEventHub,
   startChannelActivityListener,
 } from "./channels/events";
 import { createChannelStore } from "./channels/routes";
+import { websocket as channelSocket } from "./channels/socket";
 import { createStallGuard } from "./channels/stall-guard";
 import { createThreadIdentity } from "./channels/thread-identity";
-import { websocket as channelSocket } from "./channels/socket";
 import { createSandboxedStore } from "./components/sandboxed";
 import { createComponentStore } from "./components/store";
 import { createComputerClient } from "./computer/client";
@@ -38,8 +39,18 @@ import {
   resolveModelApiKey,
 } from "./credentials";
 import { createDatabase } from "./db/client";
+import {
+  applyOpenRouterEnvironment,
+  installOpenRouterFallbackFetch,
+} from "./inference/openrouter";
 import { createPluginStore } from "./plugins/store";
 import { grantedTools } from "./plugins/tools";
+import { productBackendTools } from "./tinyfish/backend";
+import {
+  createDatabaseSpriteStore,
+  createSpriteProvisioner,
+  createSpritesClient,
+} from "./sprites";
 import {
   createPackageStatusReader,
   loadTenantPackage,
@@ -58,8 +69,18 @@ async function resolveRequestActor(request: Request): Promise<{
   name: string;
   role: OpenBotRole;
 }> {
-  if (config.devNoAuth) {
+  if (config.devNoAuth && !tinyFishAuth) {
     return { id: DEV_ACTOR.id, name: DEV_ACTOR.email, role: DEV_ACTOR.role };
+  }
+  if (tinyFishAuth) {
+    const actor = await tinyFishAuth.actorFromHeaders(request.headers);
+    if (actor) {
+      return {
+        id: actor.id,
+        name: actor.name ?? actor.tinyfishUserId ?? actor.email,
+        role: actor.role,
+      };
+    }
   }
   const session = await auth?.api.getSession({ headers: request.headers });
   const user = session?.user;
@@ -104,7 +125,9 @@ const identifyActor: IdentifyActor = async (request) => {
   }
 };
 
+Object.assign(process.env, applyOpenRouterEnvironment(process.env));
 const config = loadConfig();
+installOpenRouterFallbackFetch(process.env);
 const port = Number.parseInt(process.env.PORT ?? "3001", 10);
 const database = createDatabase(config.databaseUrl);
 await initializeDevActorUser(database, config.devNoAuth);
@@ -152,6 +175,28 @@ const roleRepository = createRoleRepository(database);
 const loadAgentsForActor = createRuntimeAgentLoader(database, agentVault);
 await synchronizeTenantPackage(database, tenantPackage);
 const auth = config.auth ? createAuth(config, database) : undefined;
+const spriteAssignments = createDatabaseSpriteStore(database);
+const spriteClient = config.sprites
+  ? createSpritesClient({
+      token: config.sprites.token,
+      apiUrl: config.sprites.apiUrl,
+    })
+  : undefined;
+const spriteProvisioner = createSpriteProvisioner({
+  ...(spriteClient ? { client: spriteClient } : {}),
+  assignments: spriteAssignments,
+});
+const tinyFishAuth = config.tinyfish
+  ? createConfiguredTinyFishAuth({
+      database,
+      encryptionKey: config.keyEncryptionKey,
+      mcpUrl: config.tinyfish.mcpUrl,
+      issuer: config.tinyfish.issuer,
+      roleRepository,
+      provisionSprite: (userId) => spriteProvisioner.ensure(userId),
+      sprites: spriteAssignments,
+    })
+  : undefined;
 // One computer each, when a supervisor is configured to give them out. Without one every Bot shares
 // the computer at `baseUrl`, which is what a laptop wants and is honest about being one machine.
 const supervisor = config.computer?.supervisor
@@ -337,8 +382,14 @@ const app = createApp(
     stallGuard,
     // Tools run here, not in the browser. Each one still executes through the plugin store, so the
     // grant, the policy and the audit row are exactly where they were.
-    (actorId) => (botId) =>
-      grantedTools({ store: pluginStore, botId, actorId }),
+    (actorId) => async (botId) => [
+      ...(await grantedTools({ store: pluginStore, botId, actorId })),
+      ...productBackendTools({
+        botId,
+        actorId,
+        credentialFor: tinyFishAuth?.credentialFor,
+      }),
+    ],
     /*
      * What the deployment tells a remote Bot about the run it is starting.
      *
@@ -379,6 +430,14 @@ const app = createApp(
   sandboxedStore,
   // How a thread that has no channel is named, so the direct Bot chat is in the same namespace.
   threadIdentity,
+  tinyFishAuth,
+  {
+    assignments: spriteAssignments,
+    ...(config.sprites?.token ? { token: config.sprites.token } : {}),
+  },
+  {
+    credentialFor: tinyFishAuth?.credentialFor,
+  },
 );
 
 /**

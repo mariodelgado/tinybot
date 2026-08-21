@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_authed/_app/bot")({
 
 function RouteComponent() {
   const { agent } = Route.useSearch();
-  const agentId = agent ?? "risk-analyst";
+  const agentId = agent ?? "tinyping";
 
   // Tool calls here act on this Bot's own computer.
   useActiveBot(agentId);

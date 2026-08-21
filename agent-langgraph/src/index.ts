@@ -18,6 +18,14 @@ import {
 import { ChatOpenAI } from "@langchain/openai";
 import { serve } from "bun";
 import { SYSTEM_PROMPT } from "../../shared/bot-prompt";
+import {
+  applyOpenRouterEnvironment,
+  createOpenRouterFallbackFetch,
+  OPENROUTER_DEFAULT_MODEL,
+  resolveInferenceSettings,
+} from "../../shared/inference/openrouter";
+
+Object.assign(process.env, applyOpenRouterEnvironment(process.env));
 
 /**
  * The same Bot, on a framework.
@@ -52,7 +60,7 @@ const PORT = Number.parseInt(process.env.PORT ?? "4201", 10);
  * Each provider reads its own key. A deployment that only runs Anthropic never needs an OpenAI key,
  * which is the point of making this configurable rather than assuming one vendor.
  *
- * The default is unchanged so the two shipped Bots stay comparable out of the box.
+ * The default is OpenRouter Ox Alpha so the two shipped Bots stay comparable out of the box.
  */
 const PROVIDER = (process.env.BOT_PROVIDER ?? "openai").toLowerCase();
 /*
@@ -88,7 +96,7 @@ const GOOGLE_BASE_URL =
 function defaultModelFor(provider: string): string {
   if (provider === "anthropic") return "claude-sonnet-4-5";
   if (provider === "google") return "gemini-2.5-flash";
-  return "gpt-5.5";
+  return OPENROUTER_DEFAULT_MODEL;
 }
 
 /**
@@ -214,11 +222,21 @@ function buildModel() {
       ...(GOOGLE_BASE_URL ? { baseUrl: GOOGLE_BASE_URL } : {}),
     });
   }
+  const useOpenRouter = resolveInferenceSettings(process.env).openRouter;
   return new ChatOpenAI({
     model: MODEL,
     apiKey: API_KEY,
     streaming: true,
-    ...(OPENAI_BASE_URL ? { configuration: { baseURL: OPENAI_BASE_URL } } : {}),
+    ...(OPENAI_BASE_URL || useOpenRouter
+      ? {
+          configuration: {
+            ...(OPENAI_BASE_URL ? { baseURL: OPENAI_BASE_URL } : {}),
+            ...(useOpenRouter
+              ? { fetch: createOpenRouterFallbackFetch() }
+              : {}),
+          },
+        }
+      : {}),
     ...(USE_RESPONSES_API ? { useResponsesApi: true } : {}),
   });
 }

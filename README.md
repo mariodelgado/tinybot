@@ -1,10 +1,10 @@
 <div align="center">
 
-# OpenBot
+# TinyBot
 
-**AI coworkers you can hand real work to, and actually trust with the access.** Each gets a computer of its own: a real browser with its own logins, its own files, and only the tools you grant. Every action decided before it happens and recorded after.
+**The TinyFish desktop shell.** TinyBot is based on [OpenBot](https://github.com/CopilotKit/openbot) by CopilotKit — AG-UI coworkers, a policy gateway, and governed computers — and keeps that architecture, the MIT license, and the CopilotKit attribution.
 
-[**copilotkit.ai/openbot**](https://copilotkit.ai/openbot) · [**Quick start**](#quick-start) · [**Features**](#features) · [**Bring your own agent**](#bring-your-own-agent) · [**Architecture**](#architecture) · [**Docs**](docs/README.md)
+[**copilotkit.ai/openbot**](https://copilotkit.ai/openbot) · [**Quick start**](#quick-start) · [**TinyFish products**](#tinyfish-products) · [**Features**](#features) · [**Bring your own agent**](#bring-your-own-agent) · [**Architecture**](#architecture) · [**Docs**](docs/README.md)
 
 [![CI](https://github.com/CopilotKit/openbot/actions/workflows/ci.yml/badge.svg)](https://github.com/CopilotKit/openbot/actions/workflows/ci.yml)
 [![security](https://github.com/CopilotKit/openbot/actions/workflows/security_zizmor.yml/badge.svg)](https://github.com/CopilotKit/openbot/actions/workflows/security_zizmor.yml)
@@ -25,15 +25,15 @@ your own machine.
 
 </div>
 
-> **Alpha, and under active development.** OpenBot is early. Expect rough edges and bugs, and expect things to move. Issues and pull requests are welcome.
+> **Alpha, and under active development.** TinyBot is early. Expect rough edges and bugs, and expect things to move. Issues and pull requests are welcome.
 
-> **Runs on your machine.** Everything below is written for a laptop. Out of the box OpenBot runs with `OPENBOT_DEV_NO_AUTH`, which skips signing in and admits every request as one administrator. [Google sign-in](#sign-in-with-google) can be wired up instead.
+> **Runs on your machine.** Everything below is written for a laptop. After `bash scripts/start.sh`, TinyPipe is up and TinyFish sign-in is required (`tfk.alice` at `/sign`). `OPENBOT_DEV_NO_AUTH` remains an escape hatch only when TinyPipe is not configured. [Google sign-in](#sign-in-with-google) can be wired up instead.
 
 ## What it is
 
-An agent platform that runs inside your own infrastructure. Docker Compose brings up every part of it, the data sits in your PostgreSQL, and the model is yours to choose: no model ships in the box, and an administrator supplies the credential, which is encrypted at rest and never logged.
+TinyBot is the TinyFish desktop shell: eleven board product apps on the start page (iframe their UIs, call their backends), plus platform backends TinyBot can still start and proxy (TinyPipe, TinyTail, TinyWeb, TinyKit), plus the OpenBot coworker platform underneath. Docker Compose brings up every part of it, the data sits in your PostgreSQL, and chat goes through OpenRouter: Ox Alpha (`stealth/ox-alpha`) by default, with one retry on Grok 4.6 (`x-ai/grok-4.6`) if that call fails. The key is `OPENROUTER_API_KEY`, encrypted at rest when stored, and never logged.
 
-Three coworkers ship in the example package, and they are configuration rather than code: **General Assistant** for everyday work, **Knowledge** for company questions, **Risk Analyst** for risk and compliance. Add your own by editing `agents.yaml` or from `/agents` in the UI.
+Eleven TinyFish board products ship as the package-provided default agents, TinyPing first: **TinyPing**, **TinyTrigger**, **TinyReg**, **TinyScout**, **TinyBrief**, **TinyDeed**, **TinyFeed**, **TinyFoundry**, **TinyMargin**, **TinyAtlas**, and **TinyPrior**. They are configuration rather than code, public and ownerless, and show up on a fresh roster. Add your own by editing `agents.yaml` or from `/agents` in the UI.
 
 Anything a Bot does to a computer, a file, an MCP server or a component goes through one gateway that decides and records it. That is the difference between an agent that can use your tools and an agent you can let near them.
 
@@ -53,7 +53,7 @@ A Bot is any endpoint speaking [AG-UI](https://github.com/ag-ui-protocol/ag-ui),
 - Docker, for PostgreSQL, browser computers, the supervisor, and the shipped Bots.
 - [Bun](https://bun.sh) 1.3+, for the app and API server.
 - A CopilotKit Intelligence project and license. A free plan is available, and Intelligence can be self-hosted.
-- A model key. The proof-of-concept Bot uses OpenAI; the LangGraph Bot can use OpenAI, Anthropic, or Google.
+- An OpenRouter key (`OPENROUTER_API_KEY`). TinyBot chats via OpenRouter: Ox Alpha by default, Grok 4.6 as a one-shot fallback. Without that key, the existing local OpenAI-compatible gateway path still works and TinyBot does not call openrouter.ai.
 
 ## Quick start
 
@@ -77,7 +77,7 @@ A Bot is any endpoint speaking [AG-UI](https://github.com/ag-ui-protocol/ag-ui),
 
 3. Fill the remaining required values:
 
-   - `OPENAI_API_KEY`
+   - `OPENROUTER_API_KEY`
 
    Keep the managed Intelligence URLs from `.env.example` unless you run Intelligence yourself. The example `KEY_ENCRYPTION_KEY` is public and fine locally; generate your own with:
 
@@ -85,16 +85,71 @@ A Bot is any endpoint speaking [AG-UI](https://github.com/ag-ui-protocol/ag-ui),
    openssl rand -base64 32
    ```
 
-4. Install and run:
+4. Install and run the full stack (TinyBot + TinyFish products):
 
    ```sh
    bun install
    bash scripts/start.sh
    ```
 
-5. Open <http://localhost:3010>.
+5. Open <http://localhost:3010/sign>, paste `tfk.alice`, then open <http://localhost:3010/>.
 
-`scripts/start.sh` starts Docker services, applies migrations, starts the API server on port 3001, starts the app on port 3010, and checks that the services answer their own health routes before printing next steps.
+`scripts/start.sh` starts TinyPipe first (auth on `http://127.0.0.1:3712/mcp`), then the other products on unique host ports, then TinyBot Docker services, migrations, the API server on port 3001, and the app on port 3010. TinyPipe must be healthy before sign-in and the start-page cards work.
+
+The start page at <http://localhost:3010/> leads with eleven TinyFish board cards (TinyPing first). Click a card to open that product's live UI inside TinyBot (an in-app iframe at `/apps/<product>`), not a new browser window. README-only siblings may show Unreachable.
+
+## Sign in with TinyFish
+
+TinyPipe (`tf-03`) is the auth + metering surface. TinyBot verifies a Phase 1 fixture token against it, then upserts a user profile keyed by `tinyfish_user_id`. `bash scripts/start.sh` starts TinyPipe first and writes these localhost values into `.env` when they are missing:
+
+```sh
+TINYFISH_MCP_URL=http://127.0.0.1:3712/mcp
+TINYFISH_ISSUER=https://issuer.fixtures.tinyfish.test
+```
+
+When `TINYFISH_MCP_URL` is set, this is the real sign-in. TinyPipe must be healthy before `/sign` works. `OPENBOT_DEV_NO_AUTH` stays an escape hatch only if TinyPipe is not configured.
+
+Open <http://localhost:3010/sign> and paste a fixture token:
+
+   - `tfk.alice` → profile `tfu_alice` (`iss` = `https://issuer.fixtures.tinyfish.test`, `client_id` = `https://cimd.fixtures.tinyfish.test/client.json`)
+   - `tfk.exhausted` → profile `tfu_exhausted` (valid login; 0 credits is a TinyPipe credit gate, not an auth gate)
+   - anything else → 401
+
+A second `tfk.alice` reuses `tfu_alice`. The session cookie binds to that profile. TinyBot does not write TinyPipe credits or call `record_usage` for sign-in. Settings shows `tinyfish_user_id`. Tokens are opaque `tfk.*` keyring entries, not JWTs.
+
+## TinyFish products
+
+The products are linked services, not packages. Catalog defaults live in `app/src/lib/tinyfish/stack.ts` (host ports TinyBot publishes) and stay on localhost unless `TINYFISH_<SLUG>_URL` or `VITE_TINYFISH_<USAGE>_URL` points at Fly. Product repos keep their native binds; TinyBot remaps the host side onto the named compose service after fetching latest product code into a gitignored sibling clone. Cards probe `GET /health` and may show **Unreachable** if that service is down or README-only; they still open the shell route.
+
+When there is no Sprite, TinyBot consumes each backend at `/api/products/<slug>/*` (TinyPipe `POST /mcp` first, TinyTail `/v1/as-of`, other slugs pass the path through). See [TINYBOT.md](TINYBOT.md).
+
+Start-page cards (TinyPing first):
+
+| Product     | One-line                         | Start-page route        | Live UI after `start.sh`         | Usage id       |
+| ----------- | -------------------------------- | ----------------------- | -------------------------------- | -------------- |
+| TinyPing    | Funnel — first                   | `/apps/tinyping`        | `http://127.0.0.1:18101/ui`      | `tiny-ping`    |
+| TinyTrigger | Watch / When / Do — T1 required  | `/apps/tinytrigger`     | `http://127.0.0.1:18081/`        | `tiny-trigger` |
+| TinyReg     | Registry                         | `/apps/tinyreg`         | `http://127.0.0.1:18102/ui`      | `tiny-reg`     |
+| TinyScout   | Scout                            | `/apps/tinyscout`       | `http://127.0.0.1:18103/ui`      | `tiny-scout`   |
+| TinyBrief   | Brief                            | `/apps/tinybrief`       | `http://127.0.0.1:18104/ui`      | `tiny-brief`   |
+| TinyDeed    | Deed                             | `/apps/tinydeed`        | `http://127.0.0.1:18105/ui`      | `tiny-deed`    |
+| TinyFeed    | Event feed — graph is read-only  | `/apps/tinyfeed`        | `http://127.0.0.1:18082/ui`      | `tiny-feed`    |
+| TinyFoundry | Foundry                          | `/apps/tinyfoundry`     | `http://127.0.0.1:18106/ui`      | `tiny-foundry` |
+| TinyMargin  | Margin                           | `/apps/tinymargin`      | `http://127.0.0.1:18107/ui`      | `tiny-margin`  |
+| TinyAtlas   | Atlas                            | `/apps/tinyatlas`       | `http://127.0.0.1:18108/ui`      | `tiny-atlas`   |
+| TinyPrior   | Prior                            | `/apps/tinyprior`       | `http://127.0.0.1:18109/ui`      | `tiny-prior`   |
+
+Platform backends (not start-page cards; TinyBot still starts and proxies them): TinyPipe (`tf-03`, `http://127.0.0.1:3712/ui`), TinyTail (`js-01`, `18765`), TinyWeb (`js-03`, `18766`), TinyKit (`tf-02`, `18083`).
+
+`bash scripts/start.sh` wraps each product's own compose when a sibling checkout (or a gitignored `.tinyfish-siblings/` clone) is available, remapping only host ports. If those checkouts are missing, it falls back to git-context builds in `docker-compose.tinyfish.yml` when the overlay lists the slug. README-only board repos are not a start failure. Product source is not vendored into TinyBot. Gates stay in the product repos (TinyTail stays read-only, TinyFeed cannot mint facilities, TinyTrigger cannot bypass T1, TinyKit failed evals cannot instantiate, TinyWeb deny-list wins, TinyPipe fixture tokens are `tfk.*` not JWTs).
+
+Set `OPENBOT_SKIP_TINYFISH_PRODUCTS=1` to start TinyBot without the products.
+
+### Fly Sprites (per-user production)
+
+Localhost compose is the default. Set `SPRITES_TOKEN` or `SPRITE_TOKEN` (same Fly token, two env names) to provision **one Sprite per TinyFish user** on first sign-in. The Sprite URL stays `url_settings.auth = "sprite"` (never public). Start-page cards then iframe through TinyBot's session-authenticated proxy (`/api/sprite/apps/<slug>/...`) so the browser never holds the Fly token. TinyPipe still starts first inside that Sprite; products listen on the same remapped ports as localhost, behind one Caddy `http_port` on 8080.
+
+CI is fixture-only. Tests mock the Sprites HTTP API and never call `api.sprites.dev`.
 
 ## Try it
 
@@ -107,12 +162,14 @@ A Bot is any endpoint speaking [AG-UI](https://github.com/ag-ui-protocol/ag-ui),
 
 | Route                | Purpose                                                            |
 | -------------------- | ------------------------------------------------------------------ |
-| `/`                  | Start and browse channels.                                         |
+| `/`                  | TinyFish product cards, then start and browse channels.            |
+| `/apps/:product`     | Embed one TinyFish product UI inside the TinyBot shell.            |
 | `/agents`            | Create, edit, duplicate, hide, delete, and launch coworkers.       |
 | `/channel/:id`       | Converse with one coworker and view its live screen/profile panel. |
 | `/bot`               | Direct chat with a Bot; `?agent=<id>` selects one.                 |
 | `/skills`            | Create and enable personal skills.                                 |
-| `/settings`          | User preferences.                                                  |
+| `/sign`              | TinyFish fixture-desk sign-in (and Google, when configured).       |
+| `/settings`          | User preferences and TinyFish profile (`tinyfish_user_id`).        |
 | `/admin/connectors`  | Configure deployment knowledge sources.                            |
 | `/admin/credentials` | Store write-only encrypted credentials.                            |
 | `/admin/computers`   | View, stop, and reset Bot computers.                               |
@@ -174,8 +231,9 @@ Settings worth knowing:
 
 | Variable                             | Use                                                                       |
 | ------------------------------------ | ------------------------------------------------------------------------- |
-| `OPENBOT_DEV_NO_AUTH`                | Admits every request as one administrator. How OpenBot runs today.        |
-| `OPENAI_BASE_URL`                    | Answers the OpenAI-shaped calls from somewhere else: a gateway, a proxy.  |
+| `OPENBOT_DEV_NO_AUTH`                | Admits every request as one administrator. How TinyBot runs today.        |
+| `OPENROUTER_API_KEY`                 | TinyBot inference key. OpenRouter Ox Alpha, then one Grok 4.6 retry. Never commit a real key. |
+| `OPENAI_BASE_URL`                    | OpenAI-compatible endpoint. Defaults to `https://openrouter.ai/api/v1` when the OpenRouter key is set. |
 | `ANTHROPIC_BASE_URL`, `GOOGLE_GENERATIVE_AI_BASE_URL` | The same, for those two APIs.            |
 | `COMPUTER_TOKEN`                     | Secret every Bot computer request must present. `start.sh` sets one.      |
 | `SUPERVISOR_TOKEN`                   | Secret the supervisor requires. `start.sh` sets one.                      |
@@ -199,6 +257,21 @@ Full reference: [docs/configuration.md](docs/configuration.md).
 | `agent-langgraph`        | 4201                       | LangGraph AG-UI Bot.                                                                             |
 | `supervisor`             | 4500 host / 4300 container | Creates and manages one computer per Bot.                                                        |
 | PostgreSQL with pgvector | 5432                       | Product data, policy, audit, credentials, grants, channels, knowledge, and component metadata.   |
+| TinyPipe                 | 3712                       | Auth + usage console and MCP (`/mcp`). Must be up before TinyFish sign-in.                       |
+| TinyTail                 | 18765                      | Long-tail as-of store (platform backend).                                                        |
+| TinyWeb                  | 18766                      | Governed fetch (platform backend).                                                               |
+| TinyKit                  | 18083                      | Recipe gallery (platform backend).                                                               |
+| TinyPing                 | 18101                      | Funnel — first start-page card.                                                                  |
+| TinyTrigger              | 18081                      | Watch / When / Do.                                                                               |
+| TinyReg                  | 18102                      | Registry.                                                                                        |
+| TinyScout                | 18103                      | Scout.                                                                                           |
+| TinyBrief                | 18104                      | Brief.                                                                                           |
+| TinyDeed                 | 18105                      | Deed.                                                                                            |
+| TinyFeed                 | 18082                      | Event feed UI.                                                                                   |
+| TinyFoundry              | 18106                      | Foundry.                                                                                         |
+| TinyMargin               | 18107                      | Margin.                                                                                          |
+| TinyAtlas                | 18108                      | Atlas.                                                                                           |
+| TinyPrior                | 18109                      | Prior.                                                                                           |
 | CopilotKit Intelligence  | external                   | Durable threads and memory.                                                                      |
 
 The server gateway is the product/API path for Bot browser and file tool calls.
@@ -271,4 +344,4 @@ Use `bash scripts/start.sh` for the whole stack. Use `bun run dev` only when you
 
 ## License
 
-[MIT](./LICENSE) © CopilotKit
+[MIT](./LICENSE) © CopilotKit. TinyBot is a branded fork of [CopilotKit/OpenBot](https://github.com/CopilotKit/openbot).

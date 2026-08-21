@@ -1,0 +1,106 @@
+# TinyFish products as uniquely named TinyBot services (project: tinybot-tinyfish).
+#
+# This is the host-port overlay. Product source is not vendored, submodule'd, or
+# installed. Each service builds from its private GitHub repo (Docker git context,
+# latest default branch) and publishes a unique loopback port.
+#
+# scripts/tinyfish/start-products.ts prefers wrapping each product's own compose
+# (sibling checkout or a gitignored .tinyfish-siblings/ clone) as its own Compose
+# project. This file is the fallback for products that already have a buildable
+# tree. Board repos that are still README-only are not listed here; start-products
+# skips them and cards may show Unreachable.
+#
+# Native ports and compose service names (wrap these, not webhook/postgres):
+#   tinypipe     tinyfish-web  3712   platform
+#   tinytail     ltdf          8765   platform
+#   tinyweb      tinyfish-web  8765   platform
+#   tinykit      gallery       8080   platform
+#   tinytrigger  engine        8080   board (was tf-01-trigger-rules)
+#   tinyfeed     feed          8080   board (was js-02-physical-events)
+# Extra publishes (TinyFeed 8081/8090, TinyTrigger webhook) stay unpublished.
+# Each product honors PORT and GET /health → 200 {ok, product, usage_id}.
+#
+# TinyPipe is the auth socket. Start it first. TinyBot sign-in uses
+# TINYFISH_MCP_URL=http://127.0.0.1:3712/mcp and the fixture issuer.
+
+name: tinybot-tinyfish
+
+services:
+  tinypipe:
+    build:
+      context: https://github.com/mariodelgado/tf-03-mcp-distribution.git
+    ports:
+      - "127.0.0.1:${TINYPIPE_HOST_PORT:-3712}:${TINYPIPE_PORT:-3712}"
+    environment:
+      PORT: ${TINYPIPE_PORT:-3712}
+      TINYFISH_ISSUER: ${TINYFISH_ISSUER:-https://issuer.fixtures.tinyfish.test}
+
+  tinytail:
+    build:
+      context: https://github.com/mariodelgado/js-01-long-tail-dataset.git
+    depends_on:
+      - tinypipe
+    ports:
+      - "127.0.0.1:${TINYTAIL_HOST_PORT:-18765}:${TINYTAIL_PORT:-8765}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      PORT: ${TINYTAIL_PORT:-8765}
+      TINYFISH_MCP_URL: ${TINYFISH_MCP_URL:-http://host.docker.internal:3712/mcp}
+      TINYFISH_ISSUER: ${TINYFISH_ISSUER:-https://issuer.fixtures.tinyfish.test}
+
+  tinyweb:
+    build:
+      context: https://github.com/mariodelgado/js-03-governed-web.git
+    depends_on:
+      - tinypipe
+    ports:
+      - "127.0.0.1:${TINYWEB_HOST_PORT:-18766}:${TINYWEB_PORT:-8765}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      PORT: ${TINYWEB_PORT:-8765}
+      TINYFISH_MCP_URL: ${TINYFISH_MCP_URL:-http://host.docker.internal:3712/mcp}
+      TINYFISH_ISSUER: ${TINYFISH_ISSUER:-https://issuer.fixtures.tinyfish.test}
+
+  tinykit:
+    build:
+      context: https://github.com/mariodelgado/tf-02-recipe-gallery.git
+    depends_on:
+      - tinypipe
+    ports:
+      - "127.0.0.1:${TINYKIT_HOST_PORT:-18083}:${TINYKIT_PORT:-8080}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      PORT: ${TINYKIT_PORT:-8080}
+      TINYFISH_MCP_URL: ${TINYFISH_MCP_URL:-http://host.docker.internal:3712/mcp}
+      TINYFISH_ISSUER: ${TINYFISH_ISSUER:-https://issuer.fixtures.tinyfish.test}
+
+  tinytrigger:
+    build:
+      context: https://github.com/mariodelgado/tiny-trigger.git
+    depends_on:
+      - tinypipe
+    ports:
+      - "127.0.0.1:${TINYTRIGGER_HOST_PORT:-18081}:${TINYTRIGGER_PORT:-8080}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      PORT: ${TINYTRIGGER_PORT:-8080}
+      TINYFISH_MCP_URL: ${TINYFISH_MCP_URL:-http://host.docker.internal:3712/mcp}
+      TINYFISH_ISSUER: ${TINYFISH_ISSUER:-https://issuer.fixtures.tinyfish.test}
+
+  tinyfeed:
+    build:
+      context: https://github.com/mariodelgado/tiny-feed.git
+    depends_on:
+      - tinypipe
+    ports:
+      - "127.0.0.1:${TINYFEED_HOST_PORT:-18082}:${TINYFEED_PORT:-8080}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      PORT: ${TINYFEED_PORT:-8080}
+      TINYFISH_MCP_URL: ${TINYFISH_MCP_URL:-http://host.docker.internal:3712/mcp}
+      TINYFISH_ISSUER: ${TINYFISH_ISSUER:-https://issuer.fixtures.tinyfish.test}

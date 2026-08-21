@@ -38,6 +38,26 @@ describe("deployment configuration", () => {
     expect(config.tenantPackageDirectory).toBe("../examples/fintech");
   });
 
+  test("enables TinyFish sign-in from TINYFISH_MCP_URL without inventing a production host", () => {
+    const config = loadConfig({
+      DATABASE_URL: baseEnvironment.DATABASE_URL,
+      KEY_ENCRYPTION_KEY: baseEnvironment.KEY_ENCRYPTION_KEY,
+      INTELLIGENCE_API_URL: baseEnvironment.INTELLIGENCE_API_URL,
+      INTELLIGENCE_GATEWAY_WS_URL: baseEnvironment.INTELLIGENCE_GATEWAY_WS_URL,
+      INTELLIGENCE_API_KEY: baseEnvironment.INTELLIGENCE_API_KEY,
+      COPILOTKIT_LICENSE_TOKEN: baseEnvironment.COPILOTKIT_LICENSE_TOKEN,
+      MANAGED_AGENT_AG_UI_URL: baseEnvironment.MANAGED_AGENT_AG_UI_URL,
+      TINYFISH_MCP_URL: "http://127.0.0.1:3712/mcp",
+      TINYFISH_ISSUER: "https://issuer.fixtures.tinyfish.test",
+    });
+
+    expect(config.tinyfish).toEqual({
+      mcpUrl: "http://127.0.0.1:3712/mcp",
+      issuer: "https://issuer.fixtures.tinyfish.test",
+    });
+    expect(config.auth).toBeUndefined();
+  });
+
   test("allows deployment without an authentication provider", () => {
     const config = loadConfig({
       DATABASE_URL: baseEnvironment.DATABASE_URL,
@@ -158,6 +178,28 @@ describe("deployment configuration", () => {
   // rather than acquiring a timeout the deployment never asked for. `.env.example` ships a value.
   test("leaves the stall watchdog off when nothing is configured", () => {
     expect(loadConfig(baseEnvironment).agentStallTimeoutMs).toBe(0);
+  });
+
+  test("points inference at OpenRouter when OPENROUTER_API_KEY is set", () => {
+    const config = loadConfig({
+      ...baseEnvironment,
+      OPENROUTER_API_KEY: "test-openrouter-key",
+    });
+
+    expect(config.inference).toEqual({
+      openRouter: true,
+      baseUrl: "https://openrouter.ai/api/v1",
+      defaultModel: "stealth/ox-alpha",
+      fallbackModel: "x-ai/grok-4.6",
+    });
+  });
+
+  test("does not enable OpenRouter when the key is unset", () => {
+    const config = loadConfig(baseEnvironment);
+
+    expect(config.inference.openRouter).toBe(false);
+    expect(config.inference.baseUrl).toBeUndefined();
+    expect(config.inference.defaultModel).toBe("stealth/ox-alpha");
   });
 
   test("takes a timeout in milliseconds, and zero as switching it off", () => {

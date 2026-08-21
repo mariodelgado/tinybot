@@ -1,6 +1,6 @@
 # OpenBot docs
 
-Start with the root [README](../README.md), then use these references:
+Start with the root [README](../README.md) and [TINYBOT.md](../TINYBOT.md) (six independent TinyFish apps, remapped ports, `/api/products/:slug/*`), then use these references:
 
 - [Architecture](architecture.md): services, ports, browser governance, computers, components, plugins, knowledge, and security boundaries.
 - [Configuration](configuration.md): environment variables and tenant package YAML.

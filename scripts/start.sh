@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
-# Start the local OpenBot stack and verify each service answers as OpenBot.
-# Safe to rerun: matching services are left running, and unrelated port holders are reported.
+# Start TinyBot and the TinyFish products, then verify each service answers.
+# TinyPipe comes up first (auth socket on :3712). Board cards are the 11 products
+# (TinyPing first). Platform backends still start and proxy. Safe to rerun:
+# matching services are left running, and unrelated port holders are reported.
 
 set -euo pipefail
 
@@ -24,6 +26,37 @@ setting() {
   fi
   printf '%s' "${value:-$fallback}"
 }
+
+# Persist a default into .env when the key is missing or commented out.
+# Does not overwrite an explicit user value.
+ensure_setting() {
+  local name="$1" value="$2" tmp
+  if grep -qE "^${name}=" "$ROOT/.env"; then
+    return 0
+  fi
+  tmp="$(mktemp)"
+  if grep -qE "^#[[:space:]]*${name}=" "$ROOT/.env"; then
+    awk -v name="$name" -v value="$value" '
+      $0 ~ "^#[[:space:]]*"name"=" && !done { print name"="value; done=1; next }
+      { print }
+    ' "$ROOT/.env" > "$tmp"
+    mv "$tmp" "$ROOT/.env"
+    return 0
+  fi
+  printf '\n%s=%s\n' "$name" "$value" >> "$ROOT/.env"
+}
+
+# TinyBot inference: OpenRouter when OPENROUTER_API_KEY is set. Same OpenAI-shaped
+# client; force the OpenRouter base URL. Do not print the key.
+OPENROUTER_API_KEY="$(setting OPENROUTER_API_KEY "")"
+if [ -n "$OPENROUTER_API_KEY" ]; then
+  export OPENROUTER_API_KEY
+  export OPENAI_API_KEY="$OPENROUTER_API_KEY"
+  export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
+  export BOT_PROVIDER=openai
+  BOT_MODEL="$(setting BOT_MODEL stealth/ox-alpha)"
+  export BOT_MODEL
+fi
 
 APP_PORT="$(setting APP_PORT 3010)"
 SERVER_PORT="$(setting SERVER_PORT 3001)"
@@ -71,10 +104,46 @@ wait_for() {
 }
 
 echo
-echo "OpenBot"
+echo "TinyBot"
 echo "======="
 
-info "1/4  Docker services"
+info "1/5  TinyFish products (TinyPipe first)"
+ensure_setting TINYFISH_MCP_URL "http://127.0.0.1:3712/mcp"
+ensure_setting TINYFISH_ISSUER "https://issuer.fixtures.tinyfish.test"
+export TINYFISH_MCP_URL="$(setting TINYFISH_MCP_URL http://127.0.0.1:3712/mcp)"
+export TINYFISH_ISSUER="$(setting TINYFISH_ISSUER https://issuer.fixtures.tinyfish.test)"
+for _tf_url_key in \
+  TINYFISH_TINYPIPE_URL TINYFISH_TINYTAIL_URL TINYFISH_TINYWEB_URL \
+  TINYFISH_TINYKIT_URL TINYFISH_TINYPING_URL TINYFISH_TINYTRIGGER_URL \
+  TINYFISH_TINYREG_URL TINYFISH_TINYSCOUT_URL TINYFISH_TINYBRIEF_URL \
+  TINYFISH_TINYDEED_URL TINYFISH_TINYFEED_URL TINYFISH_TINYFOUNDRY_URL \
+  TINYFISH_TINYMARGIN_URL TINYFISH_TINYATLAS_URL TINYFISH_TINYPRIOR_URL \
+  VITE_TINYFISH_TF_03_URL VITE_TINYFISH_JS_01_URL VITE_TINYFISH_JS_03_URL \
+  VITE_TINYFISH_TF_02_URL VITE_TINYFISH_TINY_PING_URL \
+  VITE_TINYFISH_TINY_TRIGGER_URL VITE_TINYFISH_TINY_REG_URL \
+  VITE_TINYFISH_TINY_SCOUT_URL VITE_TINYFISH_TINY_BRIEF_URL \
+  VITE_TINYFISH_TINY_DEED_URL VITE_TINYFISH_TINY_FEED_URL \
+  VITE_TINYFISH_TINY_FOUNDRY_URL VITE_TINYFISH_TINY_MARGIN_URL \
+  VITE_TINYFISH_TINY_ATLAS_URL VITE_TINYFISH_TINY_PRIOR_URL
+do
+  _tf_url_val="$(setting "$_tf_url_key" "")"
+  if [ -n "$_tf_url_val" ]; then
+    export "${_tf_url_key}=${_tf_url_val}"
+  fi
+done
+unset _tf_url_key _tf_url_val
+if [ "${OPENBOT_SKIP_TINYFISH_PRODUCTS:-}" = "1" ]; then
+  info "  skipped (OPENBOT_SKIP_TINYFISH_PRODUCTS=1). Cards show Unreachable until board products are up."
+else
+  if ! bun "$ROOT/scripts/tinyfish/start-products.ts" | tee "$LOGS/tinyfish-products.log"; then
+    red "  TinyFish products did not start. TinyPipe must be healthy on :3712 before sign-in and the cards work."
+    red "  Log: $LOGS/tinyfish-products.log"
+    exit 1
+  fi
+  green "  TinyPipe $TINYFISH_MCP_URL · issuer $TINYFISH_ISSUER"
+fi
+
+info "2/5  Docker services"
 SERVICES=(postgres)
 if [ "$ONE_COMPUTER_EACH" = "true" ]; then
   SERVICES+=(supervisor)
@@ -118,7 +187,7 @@ if [ -z "$MANAGED_URL" ]; then
 fi
 green "  managed coworker endpoint: $MANAGED_URL"
 
-info "2/4  Server"
+info "3/5  Server"
 require_free_or_ours "$SERVER_PORT" server
 if ! curl -fsS --max-time 3 "http://localhost:$SERVER_PORT/api/capabilities" >/dev/null 2>&1; then
   if [ "$ONE_COMPUTER_EACH" = "true" ]; then
@@ -133,7 +202,7 @@ if ! curl -fsS --max-time 3 "http://localhost:$SERVER_PORT/api/capabilities" >/d
 fi
 wait_for "http://localhost:$SERVER_PORT/api/capabilities" "server"
 
-info "3/4  Runtime health"
+info "4/5  Runtime health"
 INFO="$(curl -fsS --max-time 8 "http://localhost:$SERVER_PORT/api/copilotkit/info")"
 python3 - "$INFO" <<'PY'
 import json, sys
@@ -150,7 +219,7 @@ if not agents:
 print(f"\033[32m  licence valid · mode {info.get('mode')} · Bots: {', '.join(agents)}\033[0m")
 PY
 
-info "4/4  App"
+info "5/5  App"
 require_free_or_ours "$APP_PORT" app
 if ! curl -fsS --max-time 3 "http://localhost:$APP_PORT/" >/dev/null 2>&1; then
   (cd app && bun run dev --port "$APP_PORT" --strictPort >"$LOGS/app.log" 2>&1 &)
@@ -160,6 +229,29 @@ wait_for "http://localhost:$APP_PORT/" "app"
 cat <<EOF
 
 $(green "Ready. http://localhost:$APP_PORT")
+
+Sign in first:             http://localhost:$APP_PORT/sign
+  TinyPipe must be healthy. Paste tfk.alice (creates tfu_alice).
+
+Board cards iframe the UI (TinyPing first). Agents call /api/products/<slug>/*.
+Platform backends still start and proxy (TinyPipe first):
+
+  - TinyPing:              http://127.0.0.1:18101/ui  /api/products/tinyping/…
+  - TinyTrigger:           http://127.0.0.1:18081/    /api/products/tinytrigger/…
+  - TinyReg:               http://127.0.0.1:18102/ui  /api/products/tinyreg/…
+  - TinyScout:             http://127.0.0.1:18103/ui  /api/products/tinyscout/…
+  - TinyBrief:             http://127.0.0.1:18104/ui  /api/products/tinybrief/…
+  - TinyDeed:              http://127.0.0.1:18105/ui  /api/products/tinydeed/…
+  - TinyFeed:              http://127.0.0.1:18082/ui  /api/products/tinyfeed/…
+  - TinyFoundry:           http://127.0.0.1:18106/ui  /api/products/tinyfoundry/…
+  - TinyMargin:            http://127.0.0.1:18107/ui  /api/products/tinymargin/…
+  - TinyAtlas:             http://127.0.0.1:18108/ui  /api/products/tinyatlas/…
+  - TinyPrior:             http://127.0.0.1:18109/ui  /api/products/tinyprior/…
+
+  - TinyPipe:              http://127.0.0.1:3712/ui   POST /api/products/tinypipe/mcp
+  - TinyTail:              http://127.0.0.1:18765/ui  GET  /api/products/tinytail/v1/as-of
+  - TinyWeb:               http://127.0.0.1:18766/ui  /api/products/tinyweb/…
+  - TinyKit:               http://127.0.0.1:18083/    /api/products/tinykit/…
 
 Next steps:
 
@@ -172,12 +264,13 @@ Next steps:
 
 Try:
 
-  1. Open /bot and ask: Open news.ycombinator.com and tell me the top story.
-  2. Create a coworker in /agents and start a channel with it.
-  3. Review browser/file actions in /admin/audit.
-  4. Add a deny rule in /admin/boundaries, then retry the same action.
+  1. Open /sign and paste tfk.alice, then open a start-page card.
+  2. Open /bot and ask: Open news.ycombinator.com and tell me the top story.
+  3. Create a coworker in /agents and start a channel with it.
+  4. Review browser/file actions in /admin/audit.
 
 Logs: $LOGS
 Stop Docker services: docker compose down
+Stop TinyFish products: bun scripts/tinyfish/start-products.ts --down
 Stop host app/server: kill the processes using ports $APP_PORT and $SERVER_PORT
 EOF

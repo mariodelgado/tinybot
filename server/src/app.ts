@@ -1,5 +1,6 @@
 import type { Hono as HonoApp, MiddlewareHandler } from "hono";
 import { Hono } from "hono";
+import { authoriseAgentCall } from "./agents/callback-token";
 import type { AgentProfileStore } from "./agents/profile-store";
 import { createAgentRoutes } from "./agents/routes";
 import { type AuditReader, type AuditStore, auditQueryFromUrl } from "./audit";
@@ -11,6 +12,7 @@ import {
   type RoleRepository,
   requireAdmin,
 } from "./auth/guards";
+import { isTinyFishAuthError, type TinyFishAuthService } from "./auth/tinyfish";
 import type { ChannelEventHub } from "./channels/events";
 import { type ChannelStore, createChannelRoutes } from "./channels/routes";
 import type { ThreadIdentity } from "./channels/thread-identity";
@@ -23,14 +25,16 @@ import type { ComputerClient } from "./computer/client";
 import type { ComputerGateway } from "./computer/gateway";
 import type { PolicyStore } from "./computer/policy-store";
 import { createComputerRoutes } from "./computer/routes";
-import { authoriseAgentCall } from "./agents/callback-token";
 import type { DeploymentConfig } from "./config";
 import type { ConnectorAdminService } from "./connectors";
 import type { CredentialAdminService, CredentialInput } from "./credentials";
 import { createPluginRoutes } from "./plugins/routes";
-import { REFUSAL_MARKER } from "./plugins/tools";
 import type { PluginStore } from "./plugins/store";
+import { REFUSAL_MARKER } from "./plugins/tools";
+import { createSpriteProxyHandler } from "./sprites/proxy";
+import type { SpriteAssignmentStore } from "./sprites/store";
 import type { PackageStatusReader } from "./tenant-package";
+import { createProductProxyHandler } from "./tinyfish/products-proxy";
 
 export function createApp(
   config: DeploymentConfig,
@@ -97,6 +101,29 @@ export function createApp(
    * says nothing about which deployment the conversation belongs to.
    */
   threadIdentity?: ThreadIdentity,
+  /**
+   * TinyFish MCP / CIMD sign-in via TinyPipe. When present this is the identity path; the
+   * OPENBOT_DEV_NO_AUTH escape hatch is not the gate.
+   */
+  tinyFishAuth?: TinyFishAuthService,
+  /**
+   * Per-user Fly Sprite proxy. Absent means cards stay on localhost remapped ports.
+   */
+  sprites?: {
+    assignments: SpriteAssignmentStore;
+    token?: string;
+    fetch?: typeof fetch;
+  },
+  /**
+   * Product API proxy. Always mounted so TinyBot can call backends without a
+   * Sprite. Forwards to 127.0.0.1:<hostPort> or TINYFISH_<SLUG>_URL /
+   * VITE_TINYFISH_<USAGE>_URL (Fly) with the TinyFish Bearer.
+   */
+  products?: {
+    credentialFor?: (userId: string) => Promise<string | undefined>;
+    fetch?: typeof fetch;
+    env?: Record<string, string | undefined>;
+  },
 ) {
   const app = new Hono<{ Variables: AppVariables }>();
 
@@ -110,6 +137,58 @@ export function createApp(
       durableHistory: config.runtime.durableHistory,
     }),
   );
+  if (tinyFishAuth) {
+    app.post("/api/auth/tinyfish", async (context) => {
+      const body = (await context.req.json().catch(() => null)) as {
+        token?: unknown;
+      } | null;
+      const token = typeof body?.token === "string" ? body.token : "";
+      if (!token.trim()) {
+        return context.json(
+          { error: "A TinyFish credential is required." },
+          400,
+        );
+      }
+      try {
+        const { profile, cookie } = await tinyFishAuth.signIn(token);
+        tinyFishAuth.writeSessionCookie(context, cookie);
+        return context.json({
+          user: {
+            id: profile.id,
+            email: profile.email,
+            name: profile.name,
+            tinyfishUserId: profile.tinyfishUserId,
+            iss: profile.iss,
+            clientId: profile.clientId,
+            role: "user",
+            ...(profile.sprite ? { sprite: profile.sprite } : {}),
+          },
+        });
+      } catch (error) {
+        if (isTinyFishAuthError(error)) {
+          return context.json({ error: error.message }, error.status);
+        }
+        throw error;
+      }
+    });
+  }
+
+  app.post("/api/auth/sign-out", async (context) => {
+    if (tinyFishAuth) {
+      await tinyFishAuth.signOut(context);
+    }
+    if (auth) {
+      return auth.handler(context.req.raw);
+    }
+    if (tinyFishAuth) {
+      return context.body(null, 204);
+    }
+    return context.json(
+      { error: "Google authentication is not configured." },
+      503,
+    );
+  });
+
   app.on(["GET", "POST"], "/api/auth/*", (context) => {
     if (!auth) {
       return context.json(
@@ -124,19 +203,31 @@ export function createApp(
   const authenticationUnavailable: MiddlewareHandler<{
     Variables: AppVariables;
   }> = async (context) =>
-    context.json({ error: "Google authentication is not configured." }, 503);
-  // Local development can stand in a fixed administrator so the product is reachable before the
-  // authentication slice is built. It is checked first so a machine with the flag set does not also
-  // need Google credentials configured just to boot.
-  const requireUser = config.devNoAuth
-    ? createDevRequireUser()
-    : auth && roleRepository
-      ? createRequireUser(auth, roleRepository)
-      : authenticationUnavailable;
+    context.json({ error: "Authentication is not configured." }, 503);
+  // TinyFish, when configured, is the real sign-in. OPENBOT_DEV_NO_AUTH stays an escape hatch
+  // only for a laptop that is not running TinyPipe.
+  const requireUser =
+    config.devNoAuth && !tinyFishAuth
+      ? createDevRequireUser()
+      : (auth || tinyFishAuth) && roleRepository
+        ? createRequireUser(auth, roleRepository, tinyFishAuth)
+        : authenticationUnavailable;
 
   app.get("/api/me", requireUser, (context) =>
     context.json({ user: context.var.actor }),
   );
+  if (sprites) {
+    const proxy = createSpriteProxyHandler(sprites);
+    app.all("/api/sprite/apps/:slug", requireUser, proxy);
+    app.all("/api/sprite/apps/:slug/*", requireUser, proxy);
+  }
+  const productProxy = createProductProxyHandler({
+    credentialFor: products?.credentialFor ?? tinyFishAuth?.credentialFor,
+    fetch: products?.fetch,
+    env: products?.env,
+  });
+  app.all("/api/products/:slug", requireUser, productProxy);
+  app.all("/api/products/:slug/*", requireUser, productProxy);
   app.get("/api/admin/status", requireUser, (context) => {
     const denied = requireAdmin(context);
     return denied ?? context.json({ status: "ok" });

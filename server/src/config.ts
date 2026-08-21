@@ -6,6 +6,10 @@
 import { devAuthEnabled } from "./auth/dev-actor";
 import type { ActionPolicy } from "./computer/policy";
 import { parseActionPolicy } from "./computer/policy-store";
+import {
+  type InferenceSettings,
+  resolveInferenceSettings,
+} from "./inference/openrouter";
 
 export type RuntimeCapabilities = {
   mode: "intelligence";
@@ -56,8 +60,33 @@ export type DeploymentConfig = {
   /**
    * Local development only: admit everybody as a fixed administrator instead of requiring sign-in.
    * See auth/dev-actor.ts for the two locks that stop this reaching a deployment.
+   *
+   * When TinyFish (`tinyfish`) is configured, that is the real sign-in and this flag is not the
+   * gate. It remains an escape hatch for a laptop that is not running TinyPipe.
    */
   devNoAuth: boolean;
+  /**
+   * TinyFish MCP / CIMD identity via TinyPipe. Absent means TinyBot does not offer that sign-in.
+   * URLs stay on localhost / fixture issuers; nothing here invents a production TinyFish host.
+   */
+  tinyfish?: {
+    mcpUrl: string;
+    issuer?: string;
+  };
+  /**
+   * Fly Sprites per-user product runtime. Absent means localhost compose is the path.
+   * Token is SPRITES_TOKEN or SPRITE_TOKEN. CI must not set this.
+   */
+  sprites?: {
+    token: string;
+    apiUrl: string;
+  };
+  /**
+   * Where built-in agents and shipped Bots spend the OpenAI-shaped key.
+   * OpenRouter when `OPENROUTER_API_KEY` is set (or `OPENAI_API_KEY` already
+   * pointed at openrouter.ai). The key itself is not stored here.
+   */
+  inference: InferenceSettings;
   /**
    * The Bot computer. Absent means the feature is off and its routes are not mounted, rather than
    * mounted and failing: a capability that is not configured should be missing, not broken.
@@ -360,6 +389,32 @@ function agentStallTimeoutMs(environment: Environment): number {
   return milliseconds;
 }
 
+function tinyfishConfig(
+  environment: Environment,
+): DeploymentConfig["tinyfish"] {
+  const mcpUrl = url(environment, "TINYFISH_MCP_URL");
+  if (!mcpUrl) {
+    return undefined;
+  }
+  const issuer = optional(environment, "TINYFISH_ISSUER");
+  return issuer ? { mcpUrl, issuer } : { mcpUrl };
+}
+
+const DEFAULT_SPRITES_API = "https://api.sprites.dev/v1";
+
+function spritesConfig(environment: Environment): DeploymentConfig["sprites"] {
+  const token =
+    optional(environment, "SPRITES_TOKEN") ??
+    optional(environment, "SPRITE_TOKEN");
+  if (!token) {
+    return undefined;
+  }
+  return {
+    token,
+    apiUrl: optional(environment, "SPRITES_API_URL") ?? DEFAULT_SPRITES_API,
+  };
+}
+
 export function loadConfig(
   environment: Environment = process.env,
 ): DeploymentConfig {
@@ -380,6 +435,9 @@ export function loadConfig(
     oauth: { google },
     auth: authConfig(environment, google),
     devNoAuth: devAuthEnabled(environment),
+    tinyfish: tinyfishConfig(environment),
+    sprites: spritesConfig(environment),
+    inference: resolveInferenceSettings(environment),
     computer: computerConfig(environment),
     ...(optional(environment, "AGENT_TOOL_TOKEN")
       ? { agentToolToken: optional(environment, "AGENT_TOOL_TOKEN") as string }

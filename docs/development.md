@@ -19,7 +19,7 @@ npx --yes copilotkit@latest license --write
 
 Put the `cpk-...` runtime key from `project select` in `.env` as
 `INTELLIGENCE_API_KEY`. `license --write` writes `COPILOTKIT_LICENSE_TOKEN`.
-Then add `OPENAI_API_KEY`.
+Then add `OPENROUTER_API_KEY`. TinyBot chats via OpenRouter (Ox Alpha, then one Grok 4.6 retry). Without that key, the existing local OpenAI-compatible path still works and does not call openrouter.ai.
 
 Start the stack:
 
@@ -29,7 +29,7 @@ bash scripts/start.sh
 
 ## Running services
 
-Use `bash scripts/start.sh` for the full local stack. It starts Docker services, applies migrations, starts the API server and app, and verifies health routes.
+Use `bash scripts/start.sh` for the full local stack. It starts TinyPipe first, then the other five TinyFish products on unique host ports (latest product compose, not vendored source), then TinyBot Docker services, migrations, the API server and app, and verifies health routes. TinyPipe must be healthy before TinyFish sign-in and the start-page cards work. Leave `SPRITES_TOKEN` / `SPRITE_TOKEN` unset for this path. Set `TINYFISH_<SLUG>_URL` / `VITE_TINYFISH_<USAGE>_URL` to point cards and `/api/products` at Fly Machines instead of localhost remap.
 
 Use `bun run dev` only when you want the app and API server without starting the Docker Bots and computers.
 
@@ -42,6 +42,21 @@ Use `bun run dev` only when you want the app and API server without starting the
 | `agent-langgraph` | 4201                       |
 | `supervisor`      | 4500 host / 4300 container |
 | PostgreSQL        | 5432                       |
+| TinyPipe          | 3712                       |
+| TinyTail          | 18765                      |
+| TinyWeb           | 18766                      |
+| TinyKit           | 18083                      |
+| TinyPing          | 18101                      |
+| TinyTrigger       | 18081                      |
+| TinyReg           | 18102                      |
+| TinyScout         | 18103                      |
+| TinyBrief         | 18104                      |
+| TinyDeed          | 18105                      |
+| TinyFeed          | 18082                      |
+| TinyFoundry       | 18106                      |
+| TinyMargin        | 18107                      |
+| TinyAtlas         | 18108                      |
+| TinyPrior         | 18109                      |
 
 `start.sh` leaves existing matching services alone and reports when a port is held by another process.
 

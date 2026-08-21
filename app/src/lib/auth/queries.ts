@@ -1,11 +1,22 @@
 import { queryOptions } from "@tanstack/react-query";
 
+export type SpriteStatus = {
+  name: string;
+  id?: string;
+  url?: string;
+  status: "cold" | "warm" | "running" | "error" | "unconfigured";
+};
+
 export type AuthenticatedUser = {
   id: string;
   email: string;
   name?: string | null;
   image?: string | null;
   role: "admin" | "user";
+  tinyfishUserId?: string;
+  iss?: string;
+  clientId?: string;
+  sprite?: SpriteStatus;
 };
 
 export const authKeys = {

@@ -54,6 +54,9 @@ test("gives both shipped Bots the OpenAI-compatible endpoint", () => {
   expect(
     compose.match(/OPENAI_BASE_URL: \$\{OPENAI_BASE_URL:-?\}/g),
   ).toHaveLength(2);
+  expect(
+    compose.match(/OPENROUTER_API_KEY: \$\{OPENROUTER_API_KEY:-\}/g),
+  ).toHaveLength(2);
   for (const variable of [
     "ANTHROPIC_BASE_URL",
     "GOOGLE_GENERATIVE_AI_BASE_URL",

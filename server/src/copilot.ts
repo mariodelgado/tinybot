@@ -182,7 +182,7 @@ export function builtInAgentConfiguration(
       // biome-ignore lint/correctness/useYield: this agent must fail when iteration starts.
       factory: async function* () {
         throw new Error(
-          `Model credential is not configured for ${agent.name}. Add the package credential or set OPENAI_API_KEY.`,
+          `Model credential is not configured for ${agent.name}. Add the package credential or set OPENROUTER_API_KEY (or OPENAI_API_KEY for a local gateway).`,
         );
       },
     };

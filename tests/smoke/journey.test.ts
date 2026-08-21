@@ -20,7 +20,7 @@ import { beforeAll, describe, expect, test } from "bun:test";
 
 const asked = process.env.OPENBOT_SMOKE === "1";
 const API = process.env.OPENBOT_API_URL ?? "http://localhost:3001";
-const BOT = process.env.OPENBOT_SMOKE_BOT ?? "risk-analyst";
+const BOT = process.env.OPENBOT_SMOKE_BOT ?? "tinyping";
 
 /** Long enough for a computer to be created and Chromium to answer on a cold deployment. */
 const COMPUTER_TIMEOUT_MS = 180_000;
