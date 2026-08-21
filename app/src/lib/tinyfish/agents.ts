@@ -1,15 +1,16 @@
 /**
- * Package-provided TinyFish coworkers: the 11 board slugs, TinyPing first.
- * Platform backends (TinyPipe, TinyTail, TinyWeb, TinyKit) are not empty-state agents.
+ * Package-provided TinyFish coworkers: every TinyX primitive, TinyPing first,
+ * then the rest of the board, then TinyPipe, TinyTail, TinyWeb, TinyKit after
+ * TinyPrior. Platform products keep `kind: "platform"` in the stack catalog.
  */
 
-import { boardProductsInStartOrder } from "./stack";
+import { primitiveProductsInCardOrder } from "./stack";
 
-export const TINYFISH_DEFAULT_AGENT_IDS = boardProductsInStartOrder().map(
+export const TINYFISH_DEFAULT_AGENT_IDS = primitiveProductsInCardOrder().map(
   (product) => product.slug,
 );
 
-export const TINYFISH_DEFAULT_AGENT_NAMES = boardProductsInStartOrder().map(
+export const TINYFISH_DEFAULT_AGENT_NAMES = primitiveProductsInCardOrder().map(
   (product) => product.title,
 );
 
@@ -36,7 +37,7 @@ export function exploreTinyFishAgents<T extends ListedAgent>(
   });
 }
 
-/** Composer fallback: TinyPing, then the rest of the board in start order. */
+/** Composer fallback: TinyPing, then the rest of the primitives in card order. */
 export function composerFallbackAgent<T extends ListedAgent>(
   agents: T[] | undefined,
 ): T | undefined {

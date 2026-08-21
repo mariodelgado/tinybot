@@ -31,9 +31,9 @@ your own machine.
 
 ## What it is
 
-TinyBot is the TinyFish desktop shell: eleven board product apps on the start page (iframe their UIs, call their backends), plus platform backends TinyBot can still start and proxy (TinyPipe, TinyTail, TinyWeb, TinyKit), plus the OpenBot coworker platform underneath. Docker Compose brings up every part of it, the data sits in your PostgreSQL, and chat goes through OpenRouter: Ox Alpha (`stealth/ox-alpha`) by default, with one retry on Grok 4.6 (`x-ai/grok-4.6`) if that call fails. The key is `OPENROUTER_API_KEY`, encrypted at rest when stored, and never logged.
+TinyBot is the TinyFish desktop shell: every TinyX product is a start-page primitive (iframe their UIs, call their backends), plus the OpenBot coworker platform underneath. Docker Compose brings up every part of it, the data sits in your PostgreSQL, and chat goes through OpenRouter: Ox Alpha (`stealth/ox-alpha`) by default, with one retry on Grok 4.6 (`x-ai/grok-4.6`) if that call fails. The key is `OPENROUTER_API_KEY`, encrypted at rest when stored, and never logged.
 
-Eleven TinyFish board products ship as the package-provided default agents, TinyPing first: **TinyPing**, **TinyTrigger**, **TinyReg**, **TinyScout**, **TinyBrief**, **TinyDeed**, **TinyFeed**, **TinyFoundry**, **TinyMargin**, **TinyAtlas**, and **TinyPrior**. They are configuration rather than code, public and ownerless, and show up on a fresh roster. Add your own by editing `agents.yaml` or from `/agents` in the UI.
+Fifteen TinyFish products ship as the package-provided default agents, TinyPing first, then the rest of the board, then **TinyPipe**, **TinyTail**, **TinyWeb**, and **TinyKit** after TinyPrior: **TinyPing**, **TinyTrigger**, **TinyReg**, **TinyScout**, **TinyBrief**, **TinyDeed**, **TinyFeed**, **TinyFoundry**, **TinyMargin**, **TinyAtlas**, **TinyPrior**, **TinyPipe**, **TinyTail**, **TinyWeb**, and **TinyKit**. They are configuration rather than code, public and ownerless, and show up on a fresh roster. Add your own by editing `agents.yaml` or from `/agents` in the UI.
 
 Anything a Bot does to a computer, a file, an MCP server or a component goes through one gateway that decides and records it. That is the difference between an agent that can use your tools and an agent you can let near them.
 
@@ -96,7 +96,7 @@ A Bot is any endpoint speaking [AG-UI](https://github.com/ag-ui-protocol/ag-ui),
 
 `scripts/start.sh` starts TinyPipe first (auth on `http://127.0.0.1:3712/mcp`), then the other products on unique host ports, then TinyBot Docker services, migrations, the API server on port 3001, and the app on port 3010. TinyPipe must be healthy before sign-in and the start-page cards work.
 
-The start page at <http://localhost:3010/> leads with eleven TinyFish board cards (TinyPing first). Click a card to open that product's live UI inside TinyBot (an in-app iframe at `/apps/<product>`), not a new browser window. README-only siblings may show Unreachable.
+The start page at <http://localhost:3010/> leads with fifteen TinyFish primitive cards (TinyPing first; Pipe, Tail, Web, Kit after Prior). Click a card to open that product's live UI inside TinyBot (an in-app iframe at `/apps/<product>`), not a new browser window. README-only siblings may show Unreachable.
 
 ## Sign in with TinyFish
 
@@ -126,7 +126,7 @@ The products are linked services, not packages. Catalog defaults live in `app/sr
 
 When there is no Sprite, TinyBot consumes each backend at `/api/products/<slug>/*` (TinyPipe `POST /mcp` first, TinyTail `/v1/as-of`, other slugs pass the path through). See [TINYBOT.md](TINYBOT.md).
 
-Start-page cards (TinyPing first):
+Start-page cards (TinyPing first; Pipe, Tail, Web, Kit after Prior):
 
 | Product     | One-line                         | Start-page route        | Live UI after `start.sh`         | Usage id       |
 | ----------- | -------------------------------- | ----------------------- | -------------------------------- | -------------- |
@@ -141,8 +141,10 @@ Start-page cards (TinyPing first):
 | TinyMargin  | Margin                           | `/apps/tinymargin`      | `http://127.0.0.1:18107/ui`      | `tiny-margin`  |
 | TinyAtlas   | Atlas                            | `/apps/tinyatlas`       | `http://127.0.0.1:18108/ui`      | `tiny-atlas`   |
 | TinyPrior   | Prior                            | `/apps/tinyprior`       | `http://127.0.0.1:18109/ui`      | `tiny-prior`   |
-
-Platform backends (not start-page cards; TinyBot still starts and proxies them): TinyPipe (`tf-03`, `http://127.0.0.1:3712/ui`), TinyTail (`js-01`, `18765`), TinyWeb (`js-03`, `18766`), TinyKit (`tf-02`, `18083`).
+| TinyPipe    | Auth + usage — fixture CIMD      | `/apps/tinypipe`        | `http://127.0.0.1:3712/ui`       | `tf-03`        |
+| TinyTail    | As-of store — read-only          | `/apps/tinytail`        | `http://127.0.0.1:18765/ui`      | `js-01`        |
+| TinyWeb     | Governed fetch — deny-list wins  | `/apps/tinyweb`         | `http://127.0.0.1:18766/ui`      | `js-03`        |
+| TinyKit     | Recipe gallery                   | `/apps/tinykit`         | `http://127.0.0.1:18083/`        | `tf-02`        |
 
 `bash scripts/start.sh` wraps each product's own compose when a sibling checkout (or a gitignored `.tinyfish-siblings/` clone) is available, remapping only host ports. If those checkouts are missing, it falls back to git-context builds in `docker-compose.tinyfish.yml` when the overlay lists the slug. README-only board repos are not a start failure. Product source is not vendored into TinyBot. Gates stay in the product repos (TinyTail stays read-only, TinyFeed cannot mint facilities, TinyTrigger cannot bypass T1, TinyKit failed evals cannot instantiate, TinyWeb deny-list wins, TinyPipe fixture tokens are `tfk.*` not JWTs).
 

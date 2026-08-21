@@ -10,7 +10,6 @@ const leftover = [
   { id: "general-assistant", name: "General Assistant" },
   { id: "knowledge", name: "Knowledge" },
   { id: "risk-analyst", name: "Risk Analyst" },
-  { id: "tinypipe", name: "TinyPipe" },
   { id: "tinywatch", name: "TinyWatch" },
   { id: "tinypulse", name: "TinyPulse" },
 ];
@@ -25,7 +24,7 @@ function publicRoster() {
 }
 
 describe("empty roster / default explore", () => {
-  test("lists the 11 board products, TinyPing first", () => {
+  test("lists all 15 TinyX primitives, TinyPing first, Pipe/Tail/Web/Kit after Prior", () => {
     expect(TINYFISH_DEFAULT_AGENT_IDS).toEqual([
       "tinyping",
       "tinytrigger",
@@ -38,6 +37,10 @@ describe("empty roster / default explore", () => {
       "tinymargin",
       "tinyatlas",
       "tinyprior",
+      "tinypipe",
+      "tinytail",
+      "tinyweb",
+      "tinykit",
     ]);
     expect(TINYFISH_DEFAULT_AGENT_NAMES).toEqual([
       "TinyPing",
@@ -51,6 +54,10 @@ describe("empty roster / default explore", () => {
       "TinyMargin",
       "TinyAtlas",
       "TinyPrior",
+      "TinyPipe",
+      "TinyTail",
+      "TinyWeb",
+      "TinyKit",
     ]);
 
     const shuffled = [...publicRoster()].reverse();
@@ -83,13 +90,13 @@ describe("empty roster / default explore", () => {
       ...publicRoster(),
     ];
     const explore = exploreTinyFishAgents(mixed);
-    expect(explore.map((agent) => agent.name).slice(0, 11)).toEqual([
+    expect(explore.map((agent) => agent.name).slice(0, 15)).toEqual([
       ...TINYFISH_DEFAULT_AGENT_NAMES,
     ]);
     expect(composerFallbackAgent(mixed)?.id).toBe("tinyping");
   });
 
-  test("an empty personal roster still shows the 11 public board products", () => {
+  test("an empty personal roster still shows the 15 public TinyX primitives", () => {
     const agents = [
       ...publicRoster(),
       {
@@ -100,7 +107,7 @@ describe("empty roster / default explore", () => {
       },
     ];
     const explore = exploreTinyFishAgents(agents);
-    expect(explore).toHaveLength(11);
+    expect(explore).toHaveLength(15);
     expect(explore.every((agent) => !agent.mine)).toBe(true);
     expect(explore.map((agent) => agent.name)).toEqual([
       ...TINYFISH_DEFAULT_AGENT_NAMES,

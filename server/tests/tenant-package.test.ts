@@ -255,6 +255,10 @@ describe("tenant YAML validation", () => {
       "tinymargin",
       "tinyatlas",
       "tinyprior",
+      "tinypipe",
+      "tinytail",
+      "tinyweb",
+      "tinykit",
     ]);
     expect(
       tenantPackage.agents.some((agent) =>
@@ -281,7 +285,14 @@ describe("tenant YAML validation", () => {
       permittedAgents: ["tinyping"],
       allowedGroups: ["all"],
     });
-    expect(tenantPackage.channels).toHaveLength(11);
+    expect(tenantPackage.channels).toHaveLength(15);
+    expect(tenantPackage.channels).toContainEqual({
+      id: "tinypipe",
+      name: "TinyPipe",
+      description: "Auth + usage. TinyFish MCP auth and credit-pool metering.",
+      permittedAgents: ["tinypipe"],
+      allowedGroups: ["all"],
+    });
     expect(
       tenantPackage.channels.every(
         (channel) =>

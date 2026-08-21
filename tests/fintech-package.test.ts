@@ -5,7 +5,7 @@ import { loadTenantPackage } from "../server/src/tenant-package";
 
 const fintechDirectory = join(import.meta.dir, "..", "examples", "fintech");
 
-const BOARD_AGENT_IDS = [
+const PRIMITIVE_AGENT_IDS = [
   "tinyping",
   "tinytrigger",
   "tinyreg",
@@ -17,6 +17,10 @@ const BOARD_AGENT_IDS = [
   "tinymargin",
   "tinyatlas",
   "tinyprior",
+  "tinypipe",
+  "tinytail",
+  "tinyweb",
+  "tinykit",
 ] as const;
 
 const OPENBOT_SAMPLE_IDS = [
@@ -25,14 +29,7 @@ const OPENBOT_SAMPLE_IDS = [
   "risk-analyst",
 ] as const;
 
-const OLD_SIX_ONLY = [
-  "tinypipe",
-  "tinytail",
-  "tinypulse",
-  "tinyweb",
-  "tinywatch",
-  "tinykit",
-] as const;
+const RETIRED_IDS = ["tinypulse", "tinywatch"] as const;
 
 test("includes the complete fintech deployment package example", () => {
   for (const fileName of [
@@ -53,19 +50,19 @@ test("includes the complete fintech deployment package example", () => {
   );
 });
 
-test("seeds the 11 board products as built-in agents, TinyPing first", async () => {
+test("seeds all 15 TinyX primitives as built-in agents, TinyPing first", async () => {
   const tenantPackage = await loadTenantPackage(fintechDirectory);
   const ids = tenantPackage.agents.map((agent) => agent.id);
 
-  expect(ids).toEqual([...BOARD_AGENT_IDS]);
-  expect(tenantPackage.agents).toHaveLength(11);
+  expect(ids).toEqual([...PRIMITIVE_AGENT_IDS]);
+  expect(tenantPackage.agents).toHaveLength(15);
   expect(tenantPackage.agents.every((agent) => agent.type === "built_in")).toBe(
     true,
   );
-  for (const leftover of [...OPENBOT_SAMPLE_IDS, ...OLD_SIX_ONLY]) {
+  for (const leftover of [...OPENBOT_SAMPLE_IDS, ...RETIRED_IDS]) {
     expect(ids).not.toContain(leftover);
   }
   expect(tenantPackage.channels.map((channel) => channel.id)).toEqual([
-    ...BOARD_AGENT_IDS,
+    ...PRIMITIVE_AGENT_IDS,
   ]);
 });

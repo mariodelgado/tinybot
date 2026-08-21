@@ -76,15 +76,45 @@ const expected = [
     title: "TinyPrior",
     defaultUrl: "http://127.0.0.1:18109/ui",
   },
+  {
+    usageId: "tf-03" as const,
+    slug: "tinypipe",
+    title: "TinyPipe",
+    defaultUrl: "http://127.0.0.1:3712/ui",
+  },
+  {
+    usageId: "js-01" as const,
+    slug: "tinytail",
+    title: "TinyTail",
+    defaultUrl: "http://127.0.0.1:18765/ui",
+  },
+  {
+    usageId: "js-03" as const,
+    slug: "tinyweb",
+    title: "TinyWeb",
+    defaultUrl: "http://127.0.0.1:18766/ui",
+  },
+  {
+    usageId: "tf-02" as const,
+    slug: "tinykit",
+    title: "TinyKit",
+    defaultUrl: "http://127.0.0.1:18083/",
+  },
 ];
 
 describe("TinyFish start-page catalog", () => {
-  test("has the 11 board products, TinyPing first, and no platform cards", () => {
-    expect(TINYFISH_APPS).toHaveLength(11);
+  test("has all 15 TinyX primitives, TinyPing first, Pipe/Tail/Web/Kit after Prior", () => {
+    expect(TINYFISH_APPS).toHaveLength(15);
     expect(TINYFISH_APPS.map((app) => app.slug)).toEqual(
       expected.map((app) => app.slug),
     );
     expect(TINYFISH_APPS[0]?.slug).toBe("tinyping");
+    expect(TINYFISH_APPS.slice(11).map((app) => app.slug)).toEqual([
+      "tinypipe",
+      "tinytail",
+      "tinyweb",
+      "tinykit",
+    ]);
 
     for (const [index, app] of TINYFISH_APPS.entries()) {
       expect(app.title).toBe(expected[index].title);
@@ -93,17 +123,17 @@ describe("TinyFish start-page catalog", () => {
       expect(app.usageId).toBe(expected[index].usageId);
     }
 
-    expect(tinyFishAppBySlug("tinypipe")).toBeUndefined();
-    expect(tinyFishAppBySlug("tinytail")).toBeUndefined();
-    expect(tinyFishAppBySlug("tinyweb")).toBeUndefined();
-    expect(tinyFishAppBySlug("tinykit")).toBeUndefined();
+    expect(tinyFishAppBySlug("tinypipe")?.title).toBe("TinyPipe");
+    expect(tinyFishAppBySlug("tinytail")?.title).toBe("TinyTail");
+    expect(tinyFishAppBySlug("tinyweb")?.title).toBe("TinyWeb");
+    expect(tinyFishAppBySlug("tinykit")?.title).toBe("TinyKit");
     expect(tinyFishAppBySlug("tinywatch")).toBeUndefined();
     expect(tinyFishAppBySlug("tinypulse")).toBeUndefined();
 
     const usageIds = new Set<TinyFishUsageId>(
       TINYFISH_APPS.map((app) => app.usageId),
     );
-    expect(usageIds.size).toBe(11);
+    expect(usageIds.size).toBe(15);
   });
 
   test("maps each board product onto an in-app /apps/$product route", () => {

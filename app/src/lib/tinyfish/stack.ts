@@ -1,9 +1,10 @@
 /**
  * TinyFish products as TinyBot publishes them: unique host ports, localhost only.
  *
- * Board cards are the 11 products on the start page. Platform services
- * (TinyPipe, TinyTail, TinyWeb, TinyKit) stay backends TinyBot can start and
- * proxy. Linked services, not packages — do not vendor their trees.
+ * Every TinyX is a TinyBot primitive (start-page card + empty-state agent).
+ * Board products keep `kind: "board"`. TinyPipe, TinyTail, TinyWeb, and TinyKit
+ * keep `kind: "platform"` (platform-capability) but still appear on the board
+ * after TinyPrior. Linked services, not packages — do not vendor their trees.
  */
 
 export type TinyFishUsageId =
@@ -342,6 +343,16 @@ export function platformProductsInStartOrder(): TinyFishProduct[] {
   return productsInStartOrder().filter(
     (product) => product.kind === "platform",
   );
+}
+
+/**
+ * Every TinyX registered as a TinyBot primitive, in start-page / empty-state
+ * card order: the eleven board products (TinyPing … TinyPrior), then TinyPipe,
+ * TinyTail, TinyWeb, TinyKit. Boot order is {@link productsInStartOrder}
+ * (TinyPipe first).
+ */
+export function primitiveProductsInCardOrder(): TinyFishProduct[] {
+  return [...boardProductsInStartOrder(), ...platformProductsInStartOrder()];
 }
 
 export function allStackHostPorts(): number[] {
