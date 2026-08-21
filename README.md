@@ -31,7 +31,7 @@ your own machine.
 
 ## What it is
 
-TinyBot is the TinyFish desktop shell: six local product UIs on the start page, plus the OpenBot coworker platform underneath. Docker Compose brings up every part of it, the data sits in your PostgreSQL, and the model is yours to choose: no model ships in the box, and an administrator supplies the credential, which is encrypted at rest and never logged.
+TinyBot is the TinyFish desktop shell: six local product UIs on the start page, plus the OpenBot coworker platform underneath. Docker Compose brings up every part of it, the data sits in your PostgreSQL, and chat goes through OpenRouter: Ox Alpha (`stealth/ox-alpha`) by default, with one retry on Grok 4.6 (`x-ai/grok-4.6`) if that call fails. The key is `OPENROUTER_API_KEY`, encrypted at rest when stored, and never logged.
 
 Three coworkers ship in the example package, and they are configuration rather than code: **General Assistant** for everyday work, **Knowledge** for company questions, **Risk Analyst** for risk and compliance. Add your own by editing `agents.yaml` or from `/agents` in the UI.
 
@@ -53,7 +53,7 @@ A Bot is any endpoint speaking [AG-UI](https://github.com/ag-ui-protocol/ag-ui),
 - Docker, for PostgreSQL, browser computers, the supervisor, and the shipped Bots.
 - [Bun](https://bun.sh) 1.3+, for the app and API server.
 - A CopilotKit Intelligence project and license. A free plan is available, and Intelligence can be self-hosted.
-- A model key. The proof-of-concept Bot uses OpenAI; the LangGraph Bot can use OpenAI, Anthropic, or Google.
+- An OpenRouter key (`OPENROUTER_API_KEY`). TinyBot chats via OpenRouter: Ox Alpha by default, Grok 4.6 as a one-shot fallback. Without that key, the existing local OpenAI-compatible gateway path still works and TinyBot does not call openrouter.ai.
 
 ## Quick start
 
@@ -77,7 +77,7 @@ A Bot is any endpoint speaking [AG-UI](https://github.com/ag-ui-protocol/ag-ui),
 
 3. Fill the remaining required values:
 
-   - `OPENAI_API_KEY`
+   - `OPENROUTER_API_KEY`
 
    Keep the managed Intelligence URLs from `.env.example` unless you run Intelligence yourself. The example `KEY_ENCRYPTION_KEY` is public and fine locally; generate your own with:
 
@@ -221,7 +221,8 @@ Settings worth knowing:
 | Variable                             | Use                                                                       |
 | ------------------------------------ | ------------------------------------------------------------------------- |
 | `OPENBOT_DEV_NO_AUTH`                | Admits every request as one administrator. How TinyBot runs today.        |
-| `OPENAI_BASE_URL`                    | Answers the OpenAI-shaped calls from somewhere else: a gateway, a proxy.  |
+| `OPENROUTER_API_KEY`                 | TinyBot inference key. OpenRouter Ox Alpha, then one Grok 4.6 retry. Never commit a real key. |
+| `OPENAI_BASE_URL`                    | OpenAI-compatible endpoint. Defaults to `https://openrouter.ai/api/v1` when the OpenRouter key is set. |
 | `ANTHROPIC_BASE_URL`, `GOOGLE_GENERATIVE_AI_BASE_URL` | The same, for those two APIs.            |
 | `COMPUTER_TOKEN`                     | Secret every Bot computer request must present. `start.sh` sets one.      |
 | `SUPERVISOR_TOKEN`                   | Secret the supervisor requires. `start.sh` sets one.                      |

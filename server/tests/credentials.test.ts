@@ -187,6 +187,36 @@ describe("model credential resolution", () => {
     ).resolves.toBe("environment-openai-key");
   });
 
+  test("prefers OPENROUTER_API_KEY over OPENAI_API_KEY", async () => {
+    await expect(
+      resolveModelApiKey({
+        encryptionKey: key,
+        reader: { readModelSecret: async () => null },
+        provider: "openai",
+        keyId: "openai-api-key",
+        environment: {
+          OPENROUTER_API_KEY: " test-openrouter-key ",
+          OPENAI_API_KEY: "environment-openai-key",
+        },
+      }),
+    ).resolves.toBe("test-openrouter-key");
+  });
+
+  test("accepts OPENAI_API_KEY only when OPENAI_BASE_URL is OpenRouter", async () => {
+    await expect(
+      resolveModelApiKey({
+        encryptionKey: key,
+        reader: { readModelSecret: async () => null },
+        provider: "openai",
+        keyId: "openai-api-key",
+        environment: {
+          OPENAI_API_KEY: "test-openrouter-via-gateway",
+          OPENAI_BASE_URL: "https://openrouter.ai/api/v1",
+        },
+      }),
+    ).resolves.toBe("test-openrouter-via-gateway");
+  });
+
   test("returns null when neither credential source is configured", async () => {
     await expect(
       resolveModelApiKey({

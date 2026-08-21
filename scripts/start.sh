@@ -45,6 +45,18 @@ ensure_setting() {
   printf '\n%s=%s\n' "$name" "$value" >> "$ROOT/.env"
 }
 
+# TinyBot inference: OpenRouter when OPENROUTER_API_KEY is set. Same OpenAI-shaped
+# client; force the OpenRouter base URL. Do not print the key.
+OPENROUTER_API_KEY="$(setting OPENROUTER_API_KEY "")"
+if [ -n "$OPENROUTER_API_KEY" ]; then
+  export OPENROUTER_API_KEY
+  export OPENAI_API_KEY="$OPENROUTER_API_KEY"
+  export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
+  export BOT_PROVIDER=openai
+  BOT_MODEL="$(setting BOT_MODEL stealth/ox-alpha)"
+  export BOT_MODEL
+fi
+
 APP_PORT="$(setting APP_PORT 3010)"
 SERVER_PORT="$(setting SERVER_PORT 3001)"
 COMPUTER_PORT="$(setting COMPUTER_PORT 4100)"

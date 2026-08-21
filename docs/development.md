@@ -19,7 +19,7 @@ npx --yes copilotkit@latest license --write
 
 Put the `cpk-...` runtime key from `project select` in `.env` as
 `INTELLIGENCE_API_KEY`. `license --write` writes `COPILOTKIT_LICENSE_TOKEN`.
-Then add `OPENAI_API_KEY`.
+Then add `OPENROUTER_API_KEY`. TinyBot chats via OpenRouter (Ox Alpha, then one Grok 4.6 retry). Without that key, the existing local OpenAI-compatible path still works and does not call openrouter.ai.
 
 Start the stack:
 

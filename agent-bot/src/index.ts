@@ -3,6 +3,12 @@ import { EventEncoder } from "@ag-ui/encoder";
 import { serve } from "bun";
 import OpenAI from "openai";
 import { SYSTEM_PROMPT } from "../../shared/bot-prompt";
+import {
+  applyOpenRouterEnvironment,
+  createOpenRouterFallbackFetch,
+  OPENROUTER_DEFAULT_MODEL,
+  resolveInferenceSettings,
+} from "../../shared/inference/openrouter";
 
 /**
  * The built-in Bot is an AG-UI HTTP service registered the same way as any customer-provided Bot.
@@ -19,12 +25,11 @@ const PORT = Number.parseInt(process.env.PORT ?? "4200", 10);
 /**
  * Which model drives the Bot.
  *
- * `gpt-5.5` works through `/v1/chat/completions`, which is the API this file uses.
- *
- * `gpt-5.6-*` models require the Responses API for tool use and cannot be used by this
- * chat-completions streaming loop.
+ * OpenRouter Ox Alpha by default. `gpt-5.6-*` models require the Responses API
+ * and cannot be used by this chat-completions streaming loop.
  */
-const MODEL = process.env.BOT_MODEL ?? "gpt-5.5";
+Object.assign(process.env, applyOpenRouterEnvironment(process.env));
+const MODEL = process.env.BOT_MODEL?.trim() || OPENROUTER_DEFAULT_MODEL;
 
 /**
  * Where that model is answered from.
@@ -40,6 +45,9 @@ const BASE_URL = process.env.OPENAI_BASE_URL?.trim() || undefined;
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: BASE_URL,
+  ...(resolveInferenceSettings(process.env).openRouter
+    ? { fetch: createOpenRouterFallbackFetch() }
+    : {}),
 });
 
 /** Translate the conversation AG-UI carries into the shape the model provider expects. */

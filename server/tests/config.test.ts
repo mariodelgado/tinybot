@@ -180,6 +180,28 @@ describe("deployment configuration", () => {
     expect(loadConfig(baseEnvironment).agentStallTimeoutMs).toBe(0);
   });
 
+  test("points inference at OpenRouter when OPENROUTER_API_KEY is set", () => {
+    const config = loadConfig({
+      ...baseEnvironment,
+      OPENROUTER_API_KEY: "test-openrouter-key",
+    });
+
+    expect(config.inference).toEqual({
+      openRouter: true,
+      baseUrl: "https://openrouter.ai/api/v1",
+      defaultModel: "stealth/ox-alpha",
+      fallbackModel: "x-ai/grok-4.6",
+    });
+  });
+
+  test("does not enable OpenRouter when the key is unset", () => {
+    const config = loadConfig(baseEnvironment);
+
+    expect(config.inference.openRouter).toBe(false);
+    expect(config.inference.baseUrl).toBeUndefined();
+    expect(config.inference.defaultModel).toBe("stealth/ox-alpha");
+  });
+
   test("takes a timeout in milliseconds, and zero as switching it off", () => {
     expect(
       loadConfig({ ...baseEnvironment, AGENT_STALL_TIMEOUT_MS: "120000" })

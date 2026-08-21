@@ -39,6 +39,10 @@ import {
   resolveModelApiKey,
 } from "./credentials";
 import { createDatabase } from "./db/client";
+import {
+  applyOpenRouterEnvironment,
+  installOpenRouterFallbackFetch,
+} from "./inference/openrouter";
 import { createPluginStore } from "./plugins/store";
 import { grantedTools } from "./plugins/tools";
 import {
@@ -120,7 +124,9 @@ const identifyActor: IdentifyActor = async (request) => {
   }
 };
 
+Object.assign(process.env, applyOpenRouterEnvironment(process.env));
 const config = loadConfig();
+installOpenRouterFallbackFetch(process.env);
 const port = Number.parseInt(process.env.PORT ?? "3001", 10);
 const database = createDatabase(config.databaseUrl);
 await initializeDevActorUser(database, config.devNoAuth);

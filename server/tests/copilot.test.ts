@@ -103,6 +103,25 @@ describe("registered Copilot agents", () => {
     });
   });
 
+  test("configures Ox Alpha as openai/stealth/ox-alpha", () => {
+    expect(
+      builtInAgentConfiguration(
+        {
+          id: "general-assistant",
+          name: "General Assistant",
+          type: "built_in",
+          systemPrompt: "Be helpful.",
+        },
+        { provider: "openai", defaultModel: "stealth/ox-alpha" },
+        "test-openrouter-key",
+      ),
+    ).toEqual({
+      model: "openai/stealth/ox-alpha",
+      prompt: "Be helpful.",
+      apiKey: "test-openrouter-key",
+    });
+  });
+
   test("fails an unavailable built-in agent through the AG-UI lifecycle", async () => {
     const agents = await buildAgents(
       [
@@ -130,12 +149,12 @@ describe("registered Copilot agents", () => {
             lifecycleError = error;
           },
         }),
-      ).rejects.toThrow("Add the package credential or set OPENAI_API_KEY");
+      ).rejects.toThrow("Add the package credential or set OPENROUTER_API_KEY");
     } finally {
       consoleError.mockRestore();
     }
     expect(lifecycleError?.message).toContain(
-      "Add the package credential or set OPENAI_API_KEY",
+      "Add the package credential or set OPENROUTER_API_KEY",
     );
   });
 
@@ -271,7 +290,7 @@ describe("registered Copilot agents", () => {
     const consoleError = spyOn(console, "error").mockImplementation(() => {});
     try {
       await expect(second["general-assistant"]?.runAgent()).rejects.toThrow(
-        "Add the package credential or set OPENAI_API_KEY",
+        "Add the package credential or set OPENROUTER_API_KEY",
       );
     } finally {
       consoleError.mockRestore();

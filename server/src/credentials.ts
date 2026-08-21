@@ -2,6 +2,10 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { type AuditStore, recordAuditEvent } from "./audit";
 import type { Database } from "./db/client";
 import { credentials } from "./db/schema";
+import {
+  isOpenRouterBaseUrl,
+  resolveOpenRouterApiKey,
+} from "./inference/openrouter";
 
 type CredentialEnvelope = {
   version: 1;
@@ -146,6 +150,13 @@ export async function resolveModelApiKey(input: {
     return decryptSecret(input.encryptionKey, stored.encryptedValue);
   }
 
+  const openRouterKey = resolveOpenRouterApiKey(input.environment);
+  if (openRouterKey) {
+    return openRouterKey;
+  }
+  if (isOpenRouterBaseUrl(input.environment.OPENAI_BASE_URL)) {
+    return null;
+  }
   const environmentKey = input.environment.OPENAI_API_KEY?.trim();
   return environmentKey || null;
 }

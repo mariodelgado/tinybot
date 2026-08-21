@@ -6,6 +6,10 @@
 import { devAuthEnabled } from "./auth/dev-actor";
 import type { ActionPolicy } from "./computer/policy";
 import { parseActionPolicy } from "./computer/policy-store";
+import {
+  type InferenceSettings,
+  resolveInferenceSettings,
+} from "./inference/openrouter";
 
 export type RuntimeCapabilities = {
   mode: "intelligence";
@@ -77,6 +81,12 @@ export type DeploymentConfig = {
     token: string;
     apiUrl: string;
   };
+  /**
+   * Where built-in agents and shipped Bots spend the OpenAI-shaped key.
+   * OpenRouter when `OPENROUTER_API_KEY` is set (or `OPENAI_API_KEY` already
+   * pointed at openrouter.ai). The key itself is not stored here.
+   */
+  inference: InferenceSettings;
   /**
    * The Bot computer. Absent means the feature is off and its routes are not mounted, rather than
    * mounted and failing: a capability that is not configured should be missing, not broken.
@@ -427,6 +437,7 @@ export function loadConfig(
     devNoAuth: devAuthEnabled(environment),
     tinyfish: tinyfishConfig(environment),
     sprites: spritesConfig(environment),
+    inference: resolveInferenceSettings(environment),
     computer: computerConfig(environment),
     ...(optional(environment, "AGENT_TOOL_TOKEN")
       ? { agentToolToken: optional(environment, "AGENT_TOOL_TOKEN") as string }

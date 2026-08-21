@@ -162,11 +162,13 @@ services:
     ports:
       - "${BOT_PORT:-4200}:4200"
     environment:
+      # Dedicated OpenRouter key is preferred; start.sh copies it onto OPENAI_API_KEY.
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       # Unset means OpenAI. Set, it is any endpoint speaking the same API, and BOT_MODEL is sent
-      # to it verbatim.
+      # to it verbatim. OpenRouter when OPENROUTER_API_KEY is set.
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
-      BOT_MODEL: ${BOT_MODEL:-gpt-5.5}
+      BOT_MODEL: ${BOT_MODEL:-stealth/ox-alpha}
     healthcheck:
       test: ["CMD-SHELL", "bun -e \"await fetch('http://localhost:4200/health')\""]
       interval: 10s
@@ -184,13 +186,14 @@ services:
       # The selected provider reads its own key. Models requiring the Responses API use
       # BOT_RESPONSES_API instead of changing the streaming loop here.
       BOT_PROVIDER: ${BOT_PROVIDER:-openai}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       GOOGLE_GENERATIVE_AI_BASE_URL: ${GOOGLE_GENERATIVE_AI_BASE_URL:-}
-      BOT_MODEL: ${BOT_MODEL:-gpt-5.5}
+      BOT_MODEL: ${BOT_MODEL:-stealth/ox-alpha}
       BOT_RESPONSES_API: ${BOT_RESPONSES_API:-false}
       # Where this Bot runs a tool: back through the deployment that granted it, never at the vendor.
       # `host.docker.internal` because the API server runs on the host, not in this network.

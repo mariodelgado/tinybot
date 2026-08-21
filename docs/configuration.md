@@ -36,46 +36,44 @@ All four Intelligence values are required together. Missing any of them stops se
 | `NODE_ENV`           | unset                              | `production` enables startup refusals for local-only settings.      |
 | `TENANT_PACKAGE_DIR` | `../examples/fintech`              | Tenant package directory, resolved from `server/`.                  |
 | `DEPLOYMENT_ID`      | the tenant package's id            | Names this deployment inside a shared Intelligence project.          |
-| `OPENAI_API_KEY`     | unset                              | Default model key for built-in agents and both shipped Bots.        |
-| `OPENAI_BASE_URL`    | unset                              | OpenAI-compatible endpoint that key is spent against. See below.    |
-| `BOT_PROVIDER`       | `openai`                           | Provider for `agent-langgraph`: `openai`, `anthropic`, or `google`. |
+| `OPENROUTER_API_KEY` | unset                              | TinyBot inference key. Preferred. Never commit a real key.          |
+| `OPENAI_API_KEY`     | unset                              | Accepted for OpenRouter only when `OPENAI_BASE_URL` already points at openrouter.ai, or for a local/dev gateway when the OpenRouter key is unset. |
+| `OPENAI_BASE_URL`    | `https://openrouter.ai/api/v1` when `OPENROUTER_API_KEY` is set | OpenAI-compatible endpoint that key is spent against. See below.    |
+| `BOT_PROVIDER`       | `openai`                           | Provider for `agent-langgraph`: `openai`, `anthropic`, or `google`. OpenRouter is OpenAI-shaped, so this stays `openai`. |
 | `ANTHROPIC_API_KEY`  | unset                              | Anthropic key when `BOT_PROVIDER=anthropic`.                        |
 | `ANTHROPIC_BASE_URL` | unset                              | Anthropic-compatible endpoint that key is spent against.            |
 | `GOOGLE_API_KEY`     | unset                              | Google key when `BOT_PROVIDER=google`.                              |
 | `GOOGLE_GENERATIVE_AI_BASE_URL` | unset                   | Google-compatible endpoint that key is spent against.               |
-| `BOT_MODEL`          | provider default from Bot code/env | Model used by the shipped Bots.                                     |
+| `BOT_MODEL`          | `stealth/ox-alpha`                 | Model used by the shipped Bots. OpenRouter default is Ox Alpha.     |
 | `BOT_RESPONSES_API`  | `false`                            | Makes `agent-langgraph` use the OpenAI Responses API.               |
 
-## OpenAI-compatible endpoints
+## OpenRouter inference
 
-`OPENAI_BASE_URL` decides where an OpenAI-shaped request is answered. Unset, that is OpenAI. Set, it is any endpoint speaking the same API: a gateway in front of several providers, a proxy, or a model on hardware you control.
+TinyBot chats through [OpenRouter](https://openrouter.ai)'s OpenAI-compatible API (`https://openrouter.ai/api/v1`). Set `OPENROUTER_API_KEY` and leave `BOT_PROVIDER=openai`. The key is sent as `Authorization: Bearer …` and is never logged.
 
-It moves the whole deployment rather than one Bot. The API server reads it for package built-in agents, `agent-bot` reads it for the client it constructs, and `agent-langgraph` reads it for `BOT_PROVIDER=openai`.
+Default model is Ox Alpha (`stealth/ox-alpha`). If that request fails — HTTP 5xx, 429, a provider error, or an empty/unavailable response — the same turn is retried once on Grok 4.6 (`x-ai/grok-4.6`). 401 and 403 are not retried (the key is wrong). Logs record which model served (`inference-served` / `inference-fallback`); they never include the key.
 
-The other two providers work the same way under their own names, because they are different APIs rather than different URLs for this one: `ANTHROPIC_BASE_URL` and `GOOGLE_GENERATIVE_AI_BASE_URL`. All three are the names the API server already reads, so one line moves the built-in agents and the Bots together and a deployment cannot end up with half of itself pointed somewhere else.
+When `OPENROUTER_API_KEY` is set, `scripts/start.sh` and the config loader force `OPENAI_BASE_URL=https://openrouter.ai/api/v1` and reuse the existing OpenAI-shaped client. There is no second HTTP client.
 
-Model names travel verbatim, so use whatever the endpoint publishes. An endpoint that namespaces its catalogue wants both halves of the name, in `BOT_MODEL` and in the tenant package's `default_model` alike.
-
-A gateway that fronts several providers behind one key is addressed the usual way:
+Without `OPENROUTER_API_KEY`, TinyBot stays on the local/dev OpenAI-compatible path (`OPENAI_API_KEY` + optional `OPENAI_BASE_URL`) and does not call openrouter.ai. `OPENAI_API_KEY` is accepted for OpenRouter only when `OPENAI_BASE_URL` already points at OpenRouter.
 
 ```sh
-OPENAI_BASE_URL=https://gateway.internal/v1
-OPENAI_API_KEY=...
-BOT_MODEL=openai/gpt-4o
+OPENROUTER_API_KEY=
+OPENAI_BASE_URL=https://openrouter.ai/api/v1
+BOT_PROVIDER=openai
+BOT_MODEL=stealth/ox-alpha
 ```
 
-and in the tenant package, where the name is namespaced the same way:
+and in the tenant package:
 
 ```yaml
 model:
   provider: openai
   credential_secret_ref: openai-api-key
-  default_model: openai/gpt-4o
+  default_model: stealth/ox-alpha
 ```
 
-Most gateways publish a model list, which is the way to check a name before configuring it.
-
-Two things are worth knowing before pointing a deployment at any gateway. Not every catalogue entry accepts tools, and a Bot without tool calling cannot drive its computer; the model list says which do. And `BOT_RESPONSES_API=true` needs an endpoint that implements the Responses API, not only chat completions.
+A non-OpenRouter gateway is still the existing path: leave `OPENROUTER_API_KEY` unset, set `OPENAI_BASE_URL` to that gateway, and send `BOT_MODEL` as the name that endpoint publishes. Not every catalogue entry accepts tools, and a Bot without tool calling cannot drive its computer. `BOT_RESPONSES_API=true` needs an endpoint that implements the Responses API, not only chat completions.
 
 ## Authentication
 
@@ -270,10 +268,10 @@ Each channel requires `id`, `name`, `description`, `permitted_agents`, and `allo
 model:
   provider: openai
   credential_secret_ref: openai-api-key
-  default_model: gpt-4.1
+  default_model: stealth/ox-alpha
 ```
 
-`provider` must be `openai`. `credential_secret_ref` is a reference to a stored credential, not a credential value. `default_model` is passed through as written, so an OpenAI-compatible endpoint reached through `OPENAI_BASE_URL` takes the name that endpoint publishes.
+`provider` must be `openai`. `credential_secret_ref` is a reference to a stored credential, not a credential value. `default_model` is passed through as written. TinyBot's shipped package uses OpenRouter Ox Alpha (`stealth/ox-alpha`).
 
 ### `knowledge.yaml`
 
