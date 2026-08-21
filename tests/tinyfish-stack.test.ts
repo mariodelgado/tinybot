@@ -55,18 +55,15 @@ test("board is 11 cards TinyPing first; platform backends are not cards", () => 
     "tinyatlas",
     "tinyprior",
   ]);
-  expect(platformProductsInStartOrder().map((product) => product.slug)).toEqual([
-    "tinypipe",
-    "tinytail",
-    "tinyweb",
-    "tinykit",
-  ]);
-  expect(TINYFISH_PRODUCTS.some((product) => product.slug === "tinywatch")).toBe(
-    false,
+  expect(platformProductsInStartOrder().map((product) => product.slug)).toEqual(
+    ["tinypipe", "tinytail", "tinyweb", "tinykit"],
   );
-  expect(TINYFISH_PRODUCTS.some((product) => product.slug === "tinypulse")).toBe(
-    false,
-  );
+  expect(
+    TINYFISH_PRODUCTS.some((product) => product.slug === "tinywatch"),
+  ).toBe(false);
+  expect(
+    TINYFISH_PRODUCTS.some((product) => product.slug === "tinypulse"),
+  ).toBe(false);
 
   for (const product of TINYFISH_PRODUCTS) {
     expect(product.repo).toStartWith("mariodelgado/");
@@ -149,9 +146,10 @@ test("catalog uses the verified compose service and GET /health", () => {
 
   for (const [slug, want] of Object.entries(expected)) {
     const product = TINYFISH_PRODUCTS.find((item) => item.slug === slug);
-    expect(product?.composeService).toBe(want.composeService);
-    expect(product?.healthPath).toBe("/health");
-    expect(tinyFishProductHealthUrl(product!)).toBe(
+    if (!product) throw new Error(`${slug} missing`);
+    expect(product.composeService).toBe(want.composeService);
+    expect(product.healthPath).toBe("/health");
+    expect(tinyFishProductHealthUrl(product)).toBe(
       `http://127.0.0.1:${want.hostPort}/health`,
     );
   }

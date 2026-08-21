@@ -120,7 +120,9 @@ describe("TinyFish start-page catalog", () => {
     if (!tinyping || !tinyfeed) {
       throw new Error("catalog is missing products");
     }
-    expect(tinyFishAppUrl(tinyping, null, {})).toBe("http://127.0.0.1:18101/ui");
+    expect(tinyFishAppUrl(tinyping, null, {})).toBe(
+      "http://127.0.0.1:18101/ui",
+    );
     expect(
       tinyFishAppUrl(tinyping, {
         url: "https://tinybot-tfu-alice-org.sprites.app",
@@ -181,6 +183,8 @@ describe("TinyFish start-page catalog", () => {
         VITE_TINYFISH_TINY_PING_URL: "https://tf-tinyping.fly.dev/ui",
       }),
     ).toBe("https://tf-tinyping.fly.dev/ui");
-    expect(tinyFishAppUrl(tinyping, null, {})).toBe("http://127.0.0.1:18101/ui");
+    expect(tinyFishAppUrl(tinyping, null, {})).toBe(
+      "http://127.0.0.1:18101/ui",
+    );
   });
 });

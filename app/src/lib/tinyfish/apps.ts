@@ -30,8 +30,8 @@ export type TinyFishApp = {
   path: string;
 };
 
-export const TINYFISH_APPS: readonly TinyFishApp[] = boardProductsInStartOrder().map(
-  (product) => ({
+export const TINYFISH_APPS: readonly TinyFishApp[] =
+  boardProductsInStartOrder().map((product) => ({
     usageId: product.usageId,
     slug: product.slug,
     title: product.title,
@@ -39,8 +39,7 @@ export const TINYFISH_APPS: readonly TinyFishApp[] = boardProductsInStartOrder()
     defaultUrl: tinyFishProductUrl(product),
     repo: product.repo,
     path: product.path,
-  }),
-);
+  }));
 
 export type TinyFishSpriteHint = {
   url?: string;
