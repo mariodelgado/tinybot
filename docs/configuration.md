@@ -94,7 +94,9 @@ A non-OpenRouter gateway is still the existing path: leave `OPENROUTER_API_KEY` 
 
 Google OAuth client id and secret must be configured together. If Google OAuth is configured, `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` are also required.
 
-TinyFish sign-in verifies a Phase 1 `tfk.*` keyring token against TinyPipe. It does not fetch CIMD or JWKS, does not mint a verifier, and does not call `record_usage`. `tfk.alice` creates profile `tfu_alice`; a second login upserts that row. `tfk.exhausted` creates `tfu_exhausted` (valid login; exhausted is a credit gate). Non-fixture tokens are 401. TinyPipe must be healthy before `/sign` works. `OPENBOT_DEV_NO_AUTH` remains an escape hatch only when TinyPipe is not configured.
+TinyFish sign-in accepts an official API key (`tf_…` from [agent.tinyfish.ai/api-keys](https://agent.tinyfish.ai/api-keys)) or an OAuth MCP token for `https://agent.tinyfish.ai/mcp`, as `X-API-Key` or `Authorization: Bearer`, and also a JSON `{ token }` body. Official credentials are checked at TinyFish; the same header is forwarded unchanged to TinyPipe and `/api/products/:slug/*`. TinyBot does not log the secret and does not call `record_usage`.
+
+Local CI still uses Phase 1 `tfk.*` fixtures against TinyPipe. `tfk.alice` creates profile `tfu_alice`; a second login upserts that row. `tfk.exhausted` creates `tfu_exhausted` (valid login; exhausted is a credit gate). A live key creates a user the same way. TinyPipe must be healthy before fixture `/sign` works. `OPENBOT_DEV_NO_AUTH` remains an escape hatch only when TinyPipe is not configured.
 
 When `SPRITES_TOKEN` or `SPRITE_TOKEN` is set, sign-in also ensures a Fly Sprite named from `tinyfish_user_id` (`tfu_alice` → `tinybot-tfu-alice`). Create uses `url_settings.auth = "sprite"`. A Fly failure is stored as sprite status `error` and does not block sign-in. Cards then load `/api/sprite/apps/<slug>/...` through TinyBot; a user can only proxy to their own Sprite. Without a token, cards stay on the remapped localhost ports.
 

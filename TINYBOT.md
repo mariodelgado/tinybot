@@ -47,7 +47,9 @@ Each product honors `PORT` and answers `GET /health` with `{ok, product, usage_i
 
 Preferred bring-up wraps each product's own compose (sibling checkout or a gitignored `.tinyfish-siblings/` clone of the latest ref) and remaps only the named compose service onto `127.0.0.1:<hostPort>:<nativePort>`. `docker-compose.tinyfish.yml` is the git-context fallback for products that already have a buildable tree. Do not vendor product repos into this checkout.
 
-Sign-in tokens are opaque `tfk.alice` / `tfk.exhausted`. Fixture issuer is `https://issuer.fixtures.tinyfish.test`.
+Sign-in accepts a TinyFish API key (`tf_…` from [agent.tinyfish.ai/api-keys](https://agent.tinyfish.ai/api-keys)) or an OAuth MCP token for `https://agent.tinyfish.ai/mcp`, presented as `X-API-Key` or `Authorization: Bearer`. That header is forwarded unchanged to TinyPipe and to product backends. TinyBot does not log the secret.
+
+Local CI still uses opaque fixtures `tfk.alice` / `tfk.exhausted`. Fixture issuer is `https://issuer.fixtures.tinyfish.test`. A live key creates a user the same way `tfk.alice` does (upsert by `tinyfish_user_id`).
 
 ## Fly Machines (optional URL override)
 

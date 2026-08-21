@@ -7,6 +7,8 @@ const sensitiveKeys = new Set([
   "accesstoken",
   "api_key",
   "apikey",
+  "x-api-key",
+  "xapikey",
   "authorization",
   "client_secret",
   "clientsecret",

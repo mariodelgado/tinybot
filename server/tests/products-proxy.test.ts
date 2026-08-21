@@ -6,8 +6,11 @@ import {
   FIXTURE_ISSUER,
   fixtureClaimsFor,
   normalizeTinyFishToken,
+  OFFICIAL_TINYFISH_CLIENT,
+  OFFICIAL_TINYFISH_ISSUER,
   TINYFISH_SESSION_COOKIE,
   TinyFishUnauthenticatedError,
+  type TinyFishVerifier,
 } from "../src/auth/tinyfish";
 import { createMemoryTinyFishProfileStore } from "../src/auth/tinyfish/profiles";
 import { loadConfig } from "../src/config";
@@ -20,10 +23,29 @@ import { testEnvironment } from "./support/environment";
 
 const encryptionKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 
-function fixtureVerifier() {
+function fixtureVerifier(): TinyFishVerifier {
   return {
-    verify: async (token: string) => {
+    verify: async (token) => {
       const claims = fixtureClaimsFor(normalizeTinyFishToken(token));
+      if (!claims) throw new TinyFishUnauthenticatedError();
+      return claims;
+    },
+  };
+}
+
+function liveAwareVerifier(): TinyFishVerifier {
+  return {
+    verify: async (token) => {
+      const normalized = normalizeTinyFishToken(token);
+      if (normalized === "tf_live_mock") {
+        return {
+          tinyfish_user_id: "tfu_live",
+          iss: OFFICIAL_TINYFISH_ISSUER,
+          issuer: OFFICIAL_TINYFISH_ISSUER,
+          client_id: OFFICIAL_TINYFISH_CLIENT,
+        };
+      }
+      const claims = fixtureClaimsFor(normalized);
       if (!claims) throw new TinyFishUnauthenticatedError();
       return claims;
     },
@@ -33,10 +55,11 @@ function fixtureVerifier() {
 function appWithProducts(
   fetchImpl: typeof fetch,
   env?: Record<string, string | undefined>,
+  verifier: TinyFishVerifier = fixtureVerifier(),
 ) {
   const profiles = createMemoryTinyFishProfileStore();
   const service = createTinyFishAuthService({
-    verifier: fixtureVerifier(),
+    verifier,
     profiles,
     sessions: createMemoryTinyFishSessionStore(encryptionKey),
     rolesForUser: async () => ["user"],
@@ -242,6 +265,64 @@ describe("product API proxy", () => {
     expect(calls[0]?.authorization).toBe("Bearer tfk.alice");
   });
 
+  test("forwards a mocked live API key as X-API-Key, unchanged", async () => {
+    const calls: {
+      url: string;
+      authorization?: string | null;
+      apiKey?: string | null;
+    }[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      const headers = new Headers(init?.headers);
+      calls.push({
+        url: String(input),
+        authorization: headers.get("authorization"),
+        apiKey: headers.get("X-API-Key"),
+      });
+      return new Response("ok", { status: 200 });
+    };
+    const { app } = appWithProducts(fetchImpl, undefined, liveAwareVerifier());
+    const signed = await app.request("http://openbot.local/api/auth/tinyfish", {
+      method: "POST",
+      headers: { "X-API-Key": "tf_live_mock" },
+    });
+    expect(signed.status).toBe(200);
+
+    const response = await app.request(
+      "http://openbot.local/api/products/tinypipe/health",
+      { headers: { cookie: cookieFrom(signed) } },
+    );
+    expect(response.status).toBe(200);
+    expect(calls[0]?.url).toBe("http://127.0.0.1:3712/health");
+    expect(calls[0]?.apiKey).toBe("tf_live_mock");
+    expect(calls[0]?.authorization).toBeNull();
+  });
+
+  test("an incoming X-API-Key on the proxy is forwarded unchanged", async () => {
+    const calls: { apiKey?: string | null; authorization?: string | null }[] =
+      [];
+    const fetchImpl: typeof fetch = async (_input, init) => {
+      const headers = new Headers(init?.headers);
+      calls.push({
+        apiKey: headers.get("X-API-Key"),
+        authorization: headers.get("authorization"),
+      });
+      return new Response("ok", { status: 200 });
+    };
+    const { app } = appWithProducts(fetchImpl);
+    const signed = await signIn(app, "tfk.alice");
+    const response = await app.request(
+      "http://openbot.local/api/products/tinypipe/health",
+      {
+        headers: {
+          cookie: cookieFrom(signed),
+          "X-API-Key": "tf_incoming_on_proxy",
+        },
+      },
+    );
+    expect(response.status).toBe(200);
+    expect(calls[0]?.apiKey).toBe("tf_incoming_on_proxy");
+  });
+
   test("an unreachable Fly origin is 502, not a thrown failure", async () => {
     const { app } = appWithProducts(async () => {
       throw new Error("tf-tinypipe.fly.dev is not live yet");
@@ -261,6 +342,7 @@ describe("product backend client", () => {
       url: string;
       method: string;
       authorization?: string | null;
+      apiKey?: string | null;
     }[] = [];
     const fetchImpl: typeof fetch = async (input, init) => {
       const headers = new Headers(init?.headers);
@@ -268,6 +350,7 @@ describe("product backend client", () => {
         url: String(input),
         method: (init?.method ?? "GET").toUpperCase(),
         authorization: headers.get("authorization"),
+        apiKey: headers.get("X-API-Key"),
       });
       return new Response("ok", { status: 200 });
     };
@@ -284,22 +367,35 @@ describe("product backend client", () => {
       { slug: "tinykit", bearer: "tfk.alice" },
       fetchImpl,
     );
+    await callProductBackend(
+      { slug: "tinyping", bearer: "tf_live_mock" },
+      fetchImpl,
+    );
 
     expect(calls).toEqual([
       {
         url: "http://127.0.0.1:3712/mcp",
         method: "POST",
         authorization: "Bearer tfk.alice",
+        apiKey: null,
       },
       {
         url: "http://127.0.0.1:18765/v1/as-of",
         method: "GET",
         authorization: "Bearer tfk.alice",
+        apiKey: null,
       },
       {
         url: "http://127.0.0.1:18083/",
         method: "GET",
         authorization: "Bearer tfk.alice",
+        apiKey: null,
+      },
+      {
+        url: "http://127.0.0.1:18101/",
+        method: "GET",
+        authorization: null,
+        apiKey: "tf_live_mock",
       },
     ]);
   });

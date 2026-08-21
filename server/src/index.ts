@@ -437,6 +437,7 @@ const app = createApp(
   },
   {
     credentialFor: tinyFishAuth?.credentialFor,
+    credentialPresentationFor: tinyFishAuth?.credentialPresentationFor,
   },
 );
 

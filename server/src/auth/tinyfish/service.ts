@@ -11,16 +11,20 @@ import {
   TinyFishUnauthenticatedError,
   TinyFishUnavailableError,
 } from "./claims";
+import type { TinyFishPresentedCredential } from "./credential";
 import type { TinyFishProfile, TinyFishProfileStore } from "./profiles";
 import type { TinyFishSessionStore } from "./sessions";
 import type { TinyFishVerifier } from "./verify";
 
 export type TinyFishAuthService = {
   signIn: (
-    token: string,
+    token: string | TinyFishPresentedCredential,
   ) => Promise<{ profile: TinyFishProfile; cookie: string }>;
   actorFromHeaders: (headers: Headers) => Promise<AuthenticatedActor | null>;
   credentialFor: (userId: string) => Promise<string | undefined>;
+  credentialPresentationFor: (
+    userId: string,
+  ) => Promise<TinyFishPresentedCredential | undefined>;
   writeSessionCookie: (context: Context, cookie: string) => void;
   signOut: (context: Context) => Promise<void>;
 };
@@ -41,7 +45,10 @@ export function createTinyFishAuthService(options: {
 }): TinyFishAuthService {
   return {
     signIn: async (token) => {
-      const claims = await options.verifier.verify(token);
+      const claims = await options.verifier.verify(
+        typeof token === "string" ? token : token.value,
+        typeof token === "string" ? undefined : { header: token.header },
+      );
       const profile = await options.profiles.upsert(claims, token);
       const cookie = await options.sessions.create(profile.id);
       let sprite = profile.sprite;
@@ -88,6 +95,8 @@ export function createTinyFishAuthService(options: {
       };
     },
     credentialFor: (userId) => options.profiles.credentialFor(userId),
+    credentialPresentationFor: (userId) =>
+      options.profiles.credentialPresentationFor(userId),
     writeSessionCookie: (context, cookie) => {
       setCookie(context, TINYFISH_SESSION_COOKIE, cookie, {
         httpOnly: true,

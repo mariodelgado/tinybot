@@ -231,7 +231,7 @@ cat <<EOF
 $(green "Ready. http://localhost:$APP_PORT")
 
 Sign in first:             http://localhost:$APP_PORT/sign
-  TinyPipe must be healthy. Paste tfk.alice (creates tfu_alice).
+  Paste a tf_… API key, an MCP token, or tfk.alice (local fixture).
 
 Board cards iframe the UI (TinyPing first). Agents call /api/products/<slug>/*.
 Platform backends still start and proxy (TinyPipe first):
