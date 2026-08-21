@@ -100,22 +100,25 @@ The start page at <http://localhost:3010/> leads with eleven TinyFish board card
 
 ## Sign in with TinyFish
 
-TinyPipe (`tf-03`) is the auth + metering surface. TinyBot verifies a Phase 1 fixture token against it, then upserts a user profile keyed by `tinyfish_user_id`. `bash scripts/start.sh` starts TinyPipe first and writes these localhost values into `.env` when they are missing:
+TinyPipe (`tf-03`) is the local auth + metering surface. TinyBot also accepts an official TinyFish API key (`tf_…` from [agent.tinyfish.ai/api-keys](https://agent.tinyfish.ai/api-keys)) or an OAuth MCP token for `https://agent.tinyfish.ai/mcp`, as `X-API-Key` or `Authorization: Bearer`. That header is forwarded unchanged to TinyPipe and `/api/products/:slug/*`. TinyBot does not log the secret.
+
+`bash scripts/start.sh` starts TinyPipe first and writes these localhost values into `.env` when they are missing:
 
 ```sh
 TINYFISH_MCP_URL=http://127.0.0.1:3712/mcp
 TINYFISH_ISSUER=https://issuer.fixtures.tinyfish.test
 ```
 
-When `TINYFISH_MCP_URL` is set, this is the real sign-in. TinyPipe must be healthy before `/sign` works. `OPENBOT_DEV_NO_AUTH` stays an escape hatch only if TinyPipe is not configured.
+When `TINYFISH_MCP_URL` is set, this is the real sign-in. Fixture `/sign` needs TinyPipe healthy. `OPENBOT_DEV_NO_AUTH` stays an escape hatch only if TinyPipe is not configured.
 
-Open <http://localhost:3010/sign> and paste a fixture token:
+Open <http://localhost:3010/sign> and paste a credential:
 
+   - `tf_…` API key or MCP token → upserts a user the same way `tfk.alice` does
    - `tfk.alice` → profile `tfu_alice` (`iss` = `https://issuer.fixtures.tinyfish.test`, `client_id` = `https://cimd.fixtures.tinyfish.test/client.json`)
-   - `tfk.exhausted` → profile `tfu_exhausted` (valid login; 0 credits is a TinyPipe credit gate, not an auth gate)
-   - anything else → 401
+   - `tfk.exhausted` → profile `tfu_exhausted` (valid login; 0 credits is a credit gate, not an auth gate)
+   - unknown / rejected credential → 401
 
-A second `tfk.alice` reuses `tfu_alice`. The session cookie binds to that profile. TinyBot does not write TinyPipe credits or call `record_usage` for sign-in. Settings shows `tinyfish_user_id`. Tokens are opaque `tfk.*` keyring entries, not JWTs.
+A second sign-in with the same credential reuses that profile. The session cookie binds to it. TinyBot does not write TinyPipe credits or call `record_usage` for sign-in. Settings shows `tinyfish_user_id`. Local CI keeps `tfk.*` fixtures.
 
 ## TinyFish products
 

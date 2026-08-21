@@ -11,6 +11,10 @@ import {
   TINYFISH_PRODUCTS,
   tinyFishProductBySlug,
 } from "../../../app/src/lib/tinyfish/stack";
+import {
+  applyTinyFishCredential,
+  presentationFromStoredValue,
+} from "../auth/tinyfish";
 import type { GrantedTool } from "../plugins/tools";
 import { copyForwardHeaders } from "./forward";
 import { localProductUpstream } from "./products-proxy";
@@ -57,7 +61,7 @@ export async function callProductBackend(
   const headers = copyForwardHeaders(new Headers());
   headers.set("content-type", "application/json");
   if (input.bearer) {
-    headers.set("Authorization", `Bearer ${input.bearer}`);
+    applyTinyFishCredential(headers, presentationFromStoredValue(input.bearer));
   }
 
   const hasBody =
