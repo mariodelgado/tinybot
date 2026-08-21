@@ -142,10 +142,10 @@ function SignScreen() {
                 >
                   agent.tinyfish.ai/api-keys
                 </a>
-                ), an MCP token for{" "}
-                <code>https://agent.tinyfish.ai/mcp</code>, or a local fixture (
-                <code>tfk.alice</code> / <code>tfk.exhausted</code>). Exhausted
-                is a credit gate, not an auth gate.
+                ), an MCP token for <code>https://agent.tinyfish.ai/mcp</code>,
+                or a local fixture (<code>tfk.alice</code> /{" "}
+                <code>tfk.exhausted</code>). Exhausted is a credit gate, not an
+                auth gate.
               </p>
             </form>
           ) : null}

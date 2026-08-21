@@ -51,9 +51,7 @@ export function classifyTinyFishCredential(
   return null;
 }
 
-export function defaultHeaderForToken(
-  token: string,
-): TinyFishCredentialHeader {
+export function defaultHeaderForToken(token: string): TinyFishCredentialHeader {
   return isTinyFishApiKey(token) ? "X-API-Key" : "Authorization";
 }
 

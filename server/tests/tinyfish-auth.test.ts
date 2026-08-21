@@ -379,10 +379,13 @@ describe("TinyFish sign-in HTTP", () => {
     });
     const app = appWithTinyFish(service);
 
-    const response = await app.request("http://openbot.local/api/auth/tinyfish", {
-      method: "POST",
-      headers: { "X-API-Key": "tf_live_mock" },
-    });
+    const response = await app.request(
+      "http://openbot.local/api/auth/tinyfish",
+      {
+        method: "POST",
+        headers: { "X-API-Key": "tf_live_mock" },
+      },
+    );
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       user: {

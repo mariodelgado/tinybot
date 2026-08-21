@@ -58,9 +58,7 @@ function storedPresentation(
   return credential;
 }
 
-function headerName(
-  header: TinyFishPresentedCredential["header"],
-): string {
+function headerName(header: TinyFishPresentedCredential["header"]): string {
   return header;
 }
 
@@ -136,7 +134,9 @@ export function createDatabaseTinyFishProfileStore(
             .update(accounts)
             .set({
               accessToken: presented?.value,
-              refreshToken: presented ? headerName(presented.header) : undefined,
+              refreshToken: presented
+                ? headerName(presented.header)
+                : undefined,
               idToken: profile.iss,
               scope: profile.clientId,
               updatedAt: now,

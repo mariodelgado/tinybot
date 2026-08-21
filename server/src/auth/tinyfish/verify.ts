@@ -60,8 +60,7 @@ export function createTinyFishVerifier(options: {
         throw new TinyFishUnauthenticatedError();
       }
 
-      const header =
-        presentation?.header ?? defaultHeaderForToken(token);
+      const header = presentation?.header ?? defaultHeaderForToken(token);
       const presented: TinyFishPresentedCredential = {
         value: token,
         header,
@@ -275,7 +274,10 @@ function readAuthResponse(
     .then((body) => interpretAuthBody(body, surface));
 }
 
-function isAcceptedNonOk(status: number, surface: "tinypipe" | "wallet" | "mcp") {
+function isAcceptedNonOk(
+  status: number,
+  surface: "tinypipe" | "wallet" | "mcp",
+) {
   // Legacy accounts are not on wallet billing; the key is still valid.
   return surface === "wallet" && status === 404;
 }
@@ -293,10 +295,7 @@ function interpretAuthBody(
       record.error.message ?? "TinyFish credential was not accepted.",
     );
   }
-  if (
-    surface !== "tinypipe" &&
-    isOfficialAuthError(record?.error?.code)
-  ) {
+  if (surface !== "tinypipe" && isOfficialAuthError(record?.error?.code)) {
     throw new TinyFishUnauthenticatedError();
   }
   if (
