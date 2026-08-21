@@ -59,11 +59,23 @@ test("board is 11 cards TinyPing first; platform backends are not cards", () => 
     ["tinypipe", "tinytail", "tinyweb", "tinykit"],
   );
   expect(
+    platformProductsInStartOrder().map((product) => product.repo),
+  ).toEqual([
+    "mariodelgado/tiny-pipe",
+    "mariodelgado/tiny-tail",
+    "mariodelgado/tiny-web",
+    "mariodelgado/tiny-kit",
+  ]);
+  expect(
     TINYFISH_PRODUCTS.some((product) => product.slug === "tinywatch"),
   ).toBe(false);
   expect(
     TINYFISH_PRODUCTS.some((product) => product.slug === "tinypulse"),
   ).toBe(false);
+  expect(tinyFishProductBySlug("tinypipe")?.usageId).toBe("tf-03");
+  expect(tinyFishProductBySlug("tinytail")?.usageId).toBe("js-01");
+  expect(tinyFishProductBySlug("tinyweb")?.usageId).toBe("js-03");
+  expect(tinyFishProductBySlug("tinykit")?.usageId).toBe("tf-02");
 
   for (const product of TINYFISH_PRODUCTS) {
     expect(product.repo).toStartWith("mariodelgado/");
@@ -239,15 +251,15 @@ test("start-products waits on GET /health and does not fail README-only siblings
 test("sibling checkouts stay outside the TinyBot tree unless cached gitignored", () => {
   const dirs = candidateCheckoutDirs(
     "/workspace",
-    "mariodelgado/tf-03-mcp-distribution",
+    "mariodelgado/tiny-pipe",
     {
       TINYFISH_SIBLINGS_DIR: "/tmp/tinyfish-siblings",
     },
   );
   expect(dirs).toEqual([
-    "/tmp/tinyfish-siblings/tf-03-mcp-distribution",
-    "/workspace/../tf-03-mcp-distribution",
-    "/workspace/.tinyfish-siblings/tf-03-mcp-distribution",
+    "/tmp/tinyfish-siblings/tiny-pipe",
+    "/workspace/../tiny-pipe",
+    "/workspace/.tinyfish-siblings/tiny-pipe",
   ]);
 });
 

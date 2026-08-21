@@ -403,7 +403,7 @@ async function startProduct(product: TinyFishProduct): Promise<void> {
   }
   if (product.slug === "tinypipe") {
     fail(
-      "TinyPipe did not start. Need Docker plus GitHub access to tf-03-mcp-distribution (sibling checkout, latest clone into .tinyfish-siblings/, or git-context build).",
+      "TinyPipe did not start. Need Docker plus GitHub access to tiny-pipe (sibling checkout, latest clone into .tinyfish-siblings/, or git-context build).",
     );
   }
   info(
