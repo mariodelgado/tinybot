@@ -120,7 +120,7 @@ function SignScreen() {
                 autoComplete="off"
                 disabled={isPending}
                 onChange={(event) => setTinyFishToken(event.target.value)}
-                placeholder="tfk.alice"
+                placeholder="tf_… or tfk.alice"
                 spellCheck={false}
                 value={tinyFishToken}
               />
@@ -133,9 +133,19 @@ function SignScreen() {
                 {isPending ? "Signing in…" : "Sign in with TinyFish"}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                Paste a TinyPipe fixture token. <code>tfk.alice</code> and{" "}
-                <code>tfk.exhausted</code> both sign in; exhausted is a credit
-                gate, not an auth gate.
+                Paste a TinyFish API key (<code>tf_…</code> from{" "}
+                <a
+                  className="underline underline-offset-2"
+                  href="https://agent.tinyfish.ai/api-keys"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  agent.tinyfish.ai/api-keys
+                </a>
+                ), an MCP token for <code>https://agent.tinyfish.ai/mcp</code>,
+                or a local fixture (<code>tfk.alice</code> /{" "}
+                <code>tfk.exhausted</code>). Exhausted is a credit gate, not an
+                auth gate.
               </p>
             </form>
           ) : null}

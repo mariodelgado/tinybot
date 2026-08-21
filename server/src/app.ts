@@ -12,7 +12,12 @@ import {
   type RoleRepository,
   requireAdmin,
 } from "./auth/guards";
-import { isTinyFishAuthError, type TinyFishAuthService } from "./auth/tinyfish";
+import {
+  isTinyFishAuthError,
+  presentedCredentialFromSignIn,
+  type TinyFishAuthService,
+  type TinyFishPresentedCredential,
+} from "./auth/tinyfish";
 import type { ChannelEventHub } from "./channels/events";
 import { type ChannelStore, createChannelRoutes } from "./channels/routes";
 import type { ThreadIdentity } from "./channels/thread-identity";
@@ -121,6 +126,9 @@ export function createApp(
    */
   products?: {
     credentialFor?: (userId: string) => Promise<string | undefined>;
+    credentialPresentationFor?: (
+      userId: string,
+    ) => Promise<TinyFishPresentedCredential | undefined>;
     fetch?: typeof fetch;
     env?: Record<string, string | undefined>;
   },
@@ -142,15 +150,18 @@ export function createApp(
       const body = (await context.req.json().catch(() => null)) as {
         token?: unknown;
       } | null;
-      const token = typeof body?.token === "string" ? body.token : "";
-      if (!token.trim()) {
+      const presented = presentedCredentialFromSignIn(
+        context.req.raw.headers,
+        typeof body?.token === "string" ? body.token : undefined,
+      );
+      if (!presented) {
         return context.json(
           { error: "A TinyFish credential is required." },
           400,
         );
       }
       try {
-        const { profile, cookie } = await tinyFishAuth.signIn(token);
+        const { profile, cookie } = await tinyFishAuth.signIn(presented);
         tinyFishAuth.writeSessionCookie(context, cookie);
         return context.json({
           user: {
@@ -223,6 +234,9 @@ export function createApp(
   }
   const productProxy = createProductProxyHandler({
     credentialFor: products?.credentialFor ?? tinyFishAuth?.credentialFor,
+    credentialPresentationFor:
+      products?.credentialPresentationFor ??
+      tinyFishAuth?.credentialPresentationFor,
     fetch: products?.fetch,
     env: products?.env,
   });

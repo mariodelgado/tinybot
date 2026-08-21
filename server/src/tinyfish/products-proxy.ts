@@ -5,7 +5,19 @@ import {
 } from "../../../app/src/lib/tinyfish/origins";
 import { tinyFishProductBySlug } from "../../../app/src/lib/tinyfish/stack";
 import type { AppVariables } from "../auth/guards";
+import {
+  applyTinyFishCredential,
+  incomingOfficialCredential,
+  presentationFromStoredValue,
+  type TinyFishPresentedCredential,
+} from "../auth/tinyfish";
 import { copyForwardHeaders } from "./forward";
+
+function presentationFromOptional(
+  value: string | undefined,
+): TinyFishPresentedCredential | undefined {
+  return value ? presentationFromStoredValue(value) : undefined;
+}
 
 export function localProductUpstream(
   slug: string,
@@ -18,6 +30,9 @@ export function localProductUpstream(
 
 export function createProductProxyHandler(options: {
   credentialFor?: (userId: string) => Promise<string | undefined>;
+  credentialPresentationFor?: (
+    userId: string,
+  ) => Promise<TinyFishPresentedCredential | undefined>;
   fetch?: typeof fetch;
   env?: EnvBag;
 }) {
@@ -42,10 +57,15 @@ export function createProductProxyHandler(options: {
 
     const headers = copyForwardHeaders(context.req.raw.headers);
     headers.delete("cookie");
-    const actor = context.var.actor;
-    const bearer = actor ? await options.credentialFor?.(actor.id) : undefined;
-    if (bearer) {
-      headers.set("Authorization", `Bearer ${bearer}`);
+    if (!incomingOfficialCredential(context.req.raw.headers)) {
+      const actor = context.var.actor;
+      const presented = actor
+        ? ((await options.credentialPresentationFor?.(actor.id)) ??
+          presentationFromOptional(await options.credentialFor?.(actor.id)))
+        : undefined;
+      if (presented) {
+        applyTinyFishCredential(headers, presented);
+      }
     }
 
     const method = context.req.method;

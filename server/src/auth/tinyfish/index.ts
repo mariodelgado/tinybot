@@ -19,6 +19,25 @@ export {
   TinyFishUnavailableError,
 } from "./claims";
 export {
+  applyTinyFishCredential,
+  classifyTinyFishCredential,
+  defaultHeaderForToken,
+  incomingOfficialCredential,
+  isTinyFishApiKey,
+  isTinyFishMcpToken,
+  liveClaimsFor,
+  liveTinyFishUserId,
+  OFFICIAL_TINYFISH_CLIENT,
+  OFFICIAL_TINYFISH_ISSUER,
+  OFFICIAL_TINYFISH_MCP_URL,
+  OFFICIAL_TINYFISH_ORIGIN,
+  presentationFromStoredValue,
+  presentedCredentialFromHeaders,
+  presentedCredentialFromSignIn,
+  type TinyFishCredentialHeader,
+  type TinyFishPresentedCredential,
+} from "./credential";
+export {
   createDatabaseTinyFishProfileStore,
   createMemoryTinyFishProfileStore,
   profileFromClaims,

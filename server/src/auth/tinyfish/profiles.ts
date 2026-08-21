@@ -3,6 +3,11 @@ import type { Database } from "../../db/client";
 import { accounts, userRoles, users } from "../../db/schema";
 import type { SpriteAssignment } from "../../sprites/store";
 import { TINYFISH_PROVIDER_ID, type TinyFishClaims } from "./claims";
+import {
+  classifyTinyFishCredential,
+  defaultHeaderForToken,
+  type TinyFishPresentedCredential,
+} from "./credential";
 
 export type TinyFishProfile = {
   id: string;
@@ -17,11 +22,14 @@ export type TinyFishProfile = {
 export type TinyFishProfileStore = {
   upsert: (
     claims: TinyFishClaims,
-    credential?: string,
+    credential?: string | TinyFishPresentedCredential,
   ) => Promise<TinyFishProfile>;
   get: (userId: string) => Promise<TinyFishProfile | null>;
-  /** Opaque tfk.* presented at sign-in. Used as Bearer on product backends. Never logged. */
+  /** Opaque credential presented at sign-in. Forwarded to backends. Never logged. */
   credentialFor: (userId: string) => Promise<string | undefined>;
+  credentialPresentationFor: (
+    userId: string,
+  ) => Promise<TinyFishPresentedCredential | undefined>;
 };
 
 export function profileFromClaims(claims: TinyFishClaims): TinyFishProfile {
@@ -35,26 +43,56 @@ export function profileFromClaims(claims: TinyFishClaims): TinyFishProfile {
   };
 }
 
+function storedPresentation(
+  credential?: string | TinyFishPresentedCredential,
+): TinyFishPresentedCredential | undefined {
+  if (!credential) return undefined;
+  if (typeof credential === "string") {
+    const kind = classifyTinyFishCredential(credential) ?? "mcp_token";
+    return {
+      value: credential,
+      header: defaultHeaderForToken(credential),
+      kind,
+    };
+  }
+  return credential;
+}
+
+function headerName(header: TinyFishPresentedCredential["header"]): string {
+  return header;
+}
+
+function headerFromStored(
+  value: string,
+  stored?: string | null,
+): TinyFishPresentedCredential["header"] {
+  return stored === "X-API-Key" || stored === "Authorization"
+    ? stored
+    : defaultHeaderForToken(value);
+}
+
 export function createMemoryTinyFishProfileStore(): TinyFishProfileStore {
   const rows = new Map<string, TinyFishProfile>();
-  const credentials = new Map<string, string>();
+  const credentials = new Map<string, TinyFishPresentedCredential>();
 
   return {
     upsert: async (claims, credential) => {
       const next = profileFromClaims(claims);
       const existing = rows.get(next.tinyfishUserId);
+      const presented = storedPresentation(credential);
       if (existing) {
         const updated = { ...existing, iss: next.iss, clientId: next.clientId };
         rows.set(next.tinyfishUserId, updated);
-        if (credential) credentials.set(next.id, credential);
+        if (presented) credentials.set(next.id, presented);
         return updated;
       }
       rows.set(next.tinyfishUserId, next);
-      if (credential) credentials.set(next.id, credential);
+      if (presented) credentials.set(next.id, presented);
       return next;
     },
     get: async (userId) => rows.get(userId) ?? null,
-    credentialFor: async (userId) => credentials.get(userId),
+    credentialFor: async (userId) => credentials.get(userId)?.value,
+    credentialPresentationFor: async (userId) => credentials.get(userId),
   };
 }
 
@@ -81,6 +119,8 @@ export function createDatabaseTinyFishProfileStore(
           )
           .limit(1);
 
+        const presented = storedPresentation(credential);
+
         if (existingAccount[0]) {
           await transaction
             .update(users)
@@ -93,7 +133,10 @@ export function createDatabaseTinyFishProfileStore(
           await transaction
             .update(accounts)
             .set({
-              accessToken: credential,
+              accessToken: presented?.value,
+              refreshToken: presented
+                ? headerName(presented.header)
+                : undefined,
               idToken: profile.iss,
               scope: profile.clientId,
               updatedAt: now,
@@ -126,14 +169,18 @@ export function createDatabaseTinyFishProfileStore(
             accountId: profile.tinyfishUserId,
             providerId: TINYFISH_PROVIDER_ID,
             userId: profile.id,
-            accessToken: credential,
+            accessToken: presented?.value,
+            refreshToken: presented ? headerName(presented.header) : undefined,
             idToken: profile.iss,
             scope: profile.clientId,
           })
           .onConflictDoUpdate({
             target: [accounts.providerId, accounts.accountId],
             set: {
-              accessToken: credential,
+              accessToken: presented?.value,
+              refreshToken: presented
+                ? headerName(presented.header)
+                : undefined,
               idToken: profile.iss,
               scope: profile.clientId,
               userId: profile.id,
@@ -191,6 +238,29 @@ export function createDatabaseTinyFishProfileStore(
         )
         .limit(1);
       return rows[0]?.accessToken ?? undefined;
+    },
+    credentialPresentationFor: async (userId) => {
+      const rows = await database
+        .select({
+          accessToken: accounts.accessToken,
+          refreshToken: accounts.refreshToken,
+        })
+        .from(accounts)
+        .where(
+          and(
+            eq(accounts.userId, userId),
+            eq(accounts.providerId, TINYFISH_PROVIDER_ID),
+          ),
+        )
+        .limit(1);
+      const value = rows[0]?.accessToken;
+      if (!value) return undefined;
+      const kind = classifyTinyFishCredential(value) ?? "mcp_token";
+      return {
+        value,
+        header: headerFromStored(value, rows[0]?.refreshToken),
+        kind,
+      };
     },
   };
 }
