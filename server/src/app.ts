@@ -34,6 +34,7 @@ import { REFUSAL_MARKER } from "./plugins/tools";
 import { createSpriteProxyHandler } from "./sprites/proxy";
 import type { SpriteAssignmentStore } from "./sprites/store";
 import type { PackageStatusReader } from "./tenant-package";
+import { createProductProxyHandler } from "./tinyfish/products-proxy";
 
 export function createApp(
   config: DeploymentConfig,
@@ -111,6 +112,14 @@ export function createApp(
   sprites?: {
     assignments: SpriteAssignmentStore;
     token?: string;
+    fetch?: typeof fetch;
+  },
+  /**
+   * Local product API proxy. Always mounted so TinyBot can call backends
+   * without a Sprite. Forwards to 127.0.0.1:<hostPort> with the TinyFish Bearer.
+   */
+  products?: {
+    credentialFor?: (userId: string) => Promise<string | undefined>;
     fetch?: typeof fetch;
   },
 ) {
@@ -210,6 +219,12 @@ export function createApp(
     app.all("/api/sprite/apps/:slug", requireUser, proxy);
     app.all("/api/sprite/apps/:slug/*", requireUser, proxy);
   }
+  const productProxy = createProductProxyHandler({
+    credentialFor: products?.credentialFor ?? tinyFishAuth?.credentialFor,
+    fetch: products?.fetch,
+  });
+  app.all("/api/products/:slug", requireUser, productProxy);
+  app.all("/api/products/:slug/*", requireUser, productProxy);
   app.get("/api/admin/status", requireUser, (context) => {
     const denied = requireAdmin(context);
     return denied ?? context.json({ status: "ok" });

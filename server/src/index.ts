@@ -45,6 +45,7 @@ import {
 } from "./inference/openrouter";
 import { createPluginStore } from "./plugins/store";
 import { grantedTools } from "./plugins/tools";
+import { productBackendTools } from "./tinyfish/backend";
 import {
   createDatabaseSpriteStore,
   createSpriteProvisioner,
@@ -381,8 +382,14 @@ const app = createApp(
     stallGuard,
     // Tools run here, not in the browser. Each one still executes through the plugin store, so the
     // grant, the policy and the audit row are exactly where they were.
-    (actorId) => (botId) =>
-      grantedTools({ store: pluginStore, botId, actorId }),
+    (actorId) => async (botId) => [
+      ...(await grantedTools({ store: pluginStore, botId, actorId })),
+      ...productBackendTools({
+        botId,
+        actorId,
+        credentialFor: tinyFishAuth?.credentialFor,
+      }),
+    ],
     /*
      * What the deployment tells a remote Bot about the run it is starting.
      *
@@ -427,6 +434,9 @@ const app = createApp(
   {
     assignments: spriteAssignments,
     ...(config.sprites?.token ? { token: config.sprites.token } : {}),
+  },
+  {
+    credentialFor: tinyFishAuth?.credentialFor,
   },
 );
 

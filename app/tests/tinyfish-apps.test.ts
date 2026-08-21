@@ -3,8 +3,10 @@ import {
   TINYFISH_APPS,
   type TinyFishUsageId,
   tinyFishAppBySlug,
+  tinyFishAppHealthUrl,
   tinyFishAppPath,
   tinyFishAppUrl,
+  tinyFishProductApiPath,
 } from "../src/lib/tinyfish/apps";
 
 const expected = [
@@ -98,5 +100,34 @@ describe("TinyFish start-page catalog", () => {
         url: "https://tinybot-tfu-alice-org.sprites.app",
       }),
     ).toBe("/api/sprite/apps/tinytail/ui");
+  });
+
+  test("card probe is GET /health on the remapped host port, not the UI path", () => {
+    const tinypipe = tinyFishAppBySlug("tinypipe");
+    const tinytail = tinyFishAppBySlug("tinytail");
+    const tinywatch = tinyFishAppBySlug("tinywatch");
+    if (!tinypipe || !tinytail || !tinywatch) {
+      throw new Error("catalog is missing products");
+    }
+    expect(tinyFishAppHealthUrl(tinypipe)).toBe("http://127.0.0.1:3712/health");
+    expect(tinyFishAppHealthUrl(tinytail)).toBe(
+      "http://127.0.0.1:18765/health",
+    );
+    expect(tinyFishAppHealthUrl(tinywatch)).toBe(
+      "http://127.0.0.1:18081/health",
+    );
+    expect(
+      tinyFishAppHealthUrl(tinypipe, { url: "https://x.sprites.app" }),
+    ).toBe("/api/sprite/apps/tinypipe/health");
+  });
+
+  test("consume path is /api/products/:slug/*", () => {
+    expect(tinyFishProductApiPath("tinypipe", "/mcp")).toBe(
+      "/api/products/tinypipe/mcp",
+    );
+    expect(tinyFishProductApiPath("tinytail", "/v1/as-of")).toBe(
+      "/api/products/tinytail/v1/as-of",
+    );
+    expect(tinyFishProductApiPath("tinykit")).toBe("/api/products/tinykit/");
   });
 });

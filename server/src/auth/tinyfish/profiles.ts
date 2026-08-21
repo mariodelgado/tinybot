@@ -20,6 +20,8 @@ export type TinyFishProfileStore = {
     credential?: string,
   ) => Promise<TinyFishProfile>;
   get: (userId: string) => Promise<TinyFishProfile | null>;
+  /** Opaque tfk.* presented at sign-in. Used as Bearer on product backends. Never logged. */
+  credentialFor: (userId: string) => Promise<string | undefined>;
 };
 
 export function profileFromClaims(claims: TinyFishClaims): TinyFishProfile {
@@ -35,20 +37,24 @@ export function profileFromClaims(claims: TinyFishClaims): TinyFishProfile {
 
 export function createMemoryTinyFishProfileStore(): TinyFishProfileStore {
   const rows = new Map<string, TinyFishProfile>();
+  const credentials = new Map<string, string>();
 
   return {
-    upsert: async (claims) => {
+    upsert: async (claims, credential) => {
       const next = profileFromClaims(claims);
       const existing = rows.get(next.tinyfishUserId);
       if (existing) {
         const updated = { ...existing, iss: next.iss, clientId: next.clientId };
         rows.set(next.tinyfishUserId, updated);
+        if (credential) credentials.set(next.id, credential);
         return updated;
       }
       rows.set(next.tinyfishUserId, next);
+      if (credential) credentials.set(next.id, credential);
       return next;
     },
     get: async (userId) => rows.get(userId) ?? null,
+    credentialFor: async (userId) => credentials.get(userId),
   };
 }
 
@@ -172,6 +178,19 @@ export function createDatabaseTinyFishProfileStore(
         iss: row.iss ?? "",
         clientId: row.clientId ?? "",
       };
+    },
+    credentialFor: async (userId) => {
+      const rows = await database
+        .select({ accessToken: accounts.accessToken })
+        .from(accounts)
+        .where(
+          and(
+            eq(accounts.userId, userId),
+            eq(accounts.providerId, TINYFISH_PROVIDER_ID),
+          ),
+        )
+        .limit(1);
+      return rows[0]?.accessToken ?? undefined;
     },
   };
 }

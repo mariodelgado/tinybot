@@ -14,6 +14,7 @@ import {
   TINYFISH_FIXTURE_ISSUER,
   TINYPIPE_MCP_URL,
   type TinyFishProduct,
+  tinyFishProductHealthUrl,
   tinyFishProductUrl,
 } from "../../app/src/lib/tinyfish/stack";
 import {
@@ -246,26 +247,19 @@ async function startOverlayService(product: TinyFishProduct): Promise<boolean> {
 }
 
 async function waitForTinyPipe(product: TinyFishProduct) {
-  const url = tinyFishProductUrl(product);
-  info(`  waiting for TinyPipe at ${url} (auth socket ${TINYPIPE_MCP_URL})`);
+  const url = tinyFishProductHealthUrl(product);
+  info(`  waiting for TinyPipe GET ${url} (auth socket ${TINYPIPE_MCP_URL})`);
   for (let attempt = 0; attempt < 60; attempt += 1) {
     try {
-      await fetch(url, { signal: AbortSignal.timeout(3000) });
-      info("  TinyPipe ready");
-      return;
-    } catch {
-      try {
-        const socket = await Bun.connect({
-          hostname: "127.0.0.1",
-          port: product.hostPort,
-        });
-        socket.end();
-        info("  TinyPipe accepted a connection on :3712");
+      const response = await fetch(url, { signal: AbortSignal.timeout(3000) });
+      if (response.ok) {
+        info("  TinyPipe ready");
         return;
-      } catch {
-        await Bun.sleep(2000);
       }
+    } catch {
+      // Keep waiting for GET /health. A bare TCP accept is not enough.
     }
+    await Bun.sleep(2000);
   }
   fail(
     "TinyPipe did not become reachable on 127.0.0.1:3712. Sign-in and the six cards need it up first.",

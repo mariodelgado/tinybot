@@ -9,6 +9,8 @@
 import {
   TINYFISH_PRODUCTS,
   type TinyFishUsageId,
+  tinyFishProductBySlug,
+  tinyFishProductHealthUrl,
   tinyFishProductUrl,
 } from "./stack";
 
@@ -84,4 +86,27 @@ export function tinyFishAppBySlug(slug: string): TinyFishApp | undefined {
 
 export function tinyFishAppPath(app: TinyFishApp): `/apps/${string}` {
   return `/apps/${app.slug}`;
+}
+
+/** Card / wait probe: GET /health on the remapped host port, not the UI path. */
+export function tinyFishAppHealthUrl(
+  app: TinyFishApp,
+  sprite?: TinyFishSpriteHint | null,
+): string {
+  if (sprite?.url) {
+    return `/api/sprite/apps/${app.slug}/health`;
+  }
+  const product = tinyFishProductBySlug(app.slug);
+  return product
+    ? tinyFishProductHealthUrl(product)
+    : `http://127.0.0.1/${app.slug}/health`;
+}
+
+/** How TinyBot agents consume a product backend when there is no Sprite. */
+export function tinyFishProductApiPath(
+  slug: string,
+  path = "/",
+): `/api/products/${string}` {
+  const suffix = path.startsWith("/") ? path : `/${path}`;
+  return `/api/products/${slug}${suffix}`;
 }

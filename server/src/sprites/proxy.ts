@@ -1,19 +1,8 @@
 import type { Context } from "hono";
 import type { AppVariables } from "../auth/guards";
+import { copyForwardHeaders } from "../tinyfish/forward";
 import { spriteProductBySlug } from "./products";
 import type { SpriteAssignmentStore } from "./store";
-
-const HOP_BY_HOP = new Set([
-  "connection",
-  "keep-alive",
-  "proxy-authenticate",
-  "proxy-authorization",
-  "te",
-  "trailers",
-  "transfer-encoding",
-  "upgrade",
-  "host",
-]);
 
 export function createSpriteProxyHandler(options: {
   assignments: SpriteAssignmentStore;
@@ -58,12 +47,7 @@ export function createSpriteProxyHandler(options: {
     const incoming = new URL(context.req.url);
     upstream.search = incoming.search;
 
-    const headers = new Headers();
-    for (const [key, value] of context.req.raw.headers.entries()) {
-      if (!HOP_BY_HOP.has(key.toLowerCase())) {
-        headers.set(key, value);
-      }
-    }
+    const headers = copyForwardHeaders(context.req.raw.headers);
     headers.set("Authorization", `Bearer ${options.token}`);
 
     const method = context.req.method;

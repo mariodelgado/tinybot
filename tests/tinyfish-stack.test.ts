@@ -10,6 +10,7 @@ import {
   TINYFISH_FIXTURE_ISSUER,
   TINYFISH_PRODUCTS,
   TINYPIPE_MCP_URL,
+  tinyFishProductHealthUrl,
   tinyFishProductUrl,
 } from "../app/src/lib/tinyfish/stack";
 import {
@@ -93,7 +94,27 @@ test("compose overlay publishes each product on its remapped loopback port", () 
   expect(compose).not.toContain("record_usage");
 });
 
-test("wrapping a product compose remaps the UI and unpublishes colliding sibling ports", () => {
+test("catalog uses the verified compose service and GET /health on the remapped host port", () => {
+  const expected = {
+    tinypipe: { composeService: "tinyfish-web", hostPort: 3712 },
+    tinytail: { composeService: "ltdf", hostPort: 18765 },
+    tinypulse: { composeService: "feed", hostPort: 18082 },
+    tinyweb: { composeService: "tinyfish-web", hostPort: 18766 },
+    tinywatch: { composeService: "engine", hostPort: 18081 },
+    tinykit: { composeService: "gallery", hostPort: 18083 },
+  } as const;
+
+  for (const product of TINYFISH_PRODUCTS) {
+    const want = expected[product.slug as keyof typeof expected];
+    expect(product.composeService).toBe(want.composeService);
+    expect(product.healthPath).toBe("/health");
+    expect(tinyFishProductHealthUrl(product)).toBe(
+      `http://127.0.0.1:${want.hostPort}/health`,
+    );
+  }
+});
+
+test("wrapping TinyPulse publishes feed, not webhook or postgres", () => {
   const tinypulse = TINYFISH_PRODUCTS.find(
     (product) => product.slug === "tinypulse",
   );
@@ -103,15 +124,73 @@ test("wrapping a product compose remaps the UI and unpublishes colliding sibling
 
   const rewritten = remapComposeServices(
     {
-      web: { ports: ["8080:8080"] },
+      feed: { ports: ["8080:8080"] },
+      webhook: { ports: ["8081:8081"] },
       postgres: { ports: ["5432:5432"] },
+      sidecar: { ports: ["8090:8090"] },
     },
     tinypulse,
   );
 
-  expect(rewritten.web?.ports).toEqual([uiPublishBinding(tinypulse)]);
-  expect(rewritten.web?.ports).toEqual(["127.0.0.1:18082:8080"]);
+  expect(rewritten.feed?.ports).toEqual([uiPublishBinding(tinypulse)]);
+  expect(rewritten.feed?.ports).toEqual(["127.0.0.1:18082:8080"]);
+  expect(rewritten.webhook?.ports).toBeUndefined();
   expect(rewritten.postgres?.ports).toBeUndefined();
+  expect(rewritten.sidecar?.ports).toBeUndefined();
+});
+
+test("wrapping TinyWatch publishes engine, not the webhook sidecar", () => {
+  const tinywatch = TINYFISH_PRODUCTS.find(
+    (product) => product.slug === "tinywatch",
+  );
+  if (!tinywatch) {
+    throw new Error("tinywatch missing from catalog");
+  }
+
+  const rewritten = remapComposeServices(
+    {
+      engine: { ports: ["8080:8080"] },
+      webhook: { ports: ["8081:8081"] },
+      postgres: { ports: ["5432:5432"] },
+    },
+    tinywatch,
+  );
+
+  expect(rewritten.engine?.ports).toEqual(["127.0.0.1:18081:8080"]);
+  expect(rewritten.webhook?.ports).toBeUndefined();
+  expect(rewritten.postgres?.ports).toBeUndefined();
+});
+
+test("named compose service wins over another service that also binds the native port", () => {
+  const tinypulse = TINYFISH_PRODUCTS.find(
+    (product) => product.slug === "tinypulse",
+  );
+  if (!tinypulse) {
+    throw new Error("tinypulse missing from catalog");
+  }
+
+  const rewritten = remapComposeServices(
+    {
+      webhook: { ports: ["8080:8080"] },
+      feed: { ports: ["8080:8080"] },
+    },
+    tinypulse,
+  );
+
+  expect(rewritten.feed?.ports).toEqual(["127.0.0.1:18082:8080"]);
+  expect(rewritten.webhook?.ports).toBeUndefined();
+});
+
+test("start-products waits on GET /health, not a UI path", () => {
+  const start = readFileSync(
+    join(root, "scripts/tinyfish/start-products.ts"),
+    "utf8",
+  );
+  expect(start).toContain("async function waitForTinyPipe");
+  expect(start).toContain("tinyFishProductHealthUrl(product)");
+  expect(start.indexOf("tinyFishProductHealthUrl(product)")).toBeLessThan(
+    start.indexOf("TinyPipe ready"),
+  );
 });
 
 test("sibling checkouts stay outside the TinyBot tree unless cached gitignored", () => {

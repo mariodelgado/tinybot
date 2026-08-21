@@ -168,7 +168,7 @@ When optional SPIRE services are used:
 | TinyWatch         | 18081                      | `TINYWATCH_HOST_PORT` |
 | TinyKit           | 18083                      | `TINYKIT_HOST_PORT` |
 
-TinyFish product ports are published by `docker-compose.tinyfish.yml` (or a wrap of each product's own compose). Native container ports stay 3712 / 8765 / 8080; only the host side is remapped.
+TinyFish product ports are published by wrapping the named compose service (`tinyfish-web`, `ltdf`, `feed`, `engine`, `gallery`) or by `docker-compose.tinyfish.yml`. Native container ports stay 3712 / 8765 / 8080; only the host side is remapped. Extra publishes (TinyPulse 8081/8090, TinyWatch webhook) stay unpublished. Cards and start wait on `GET /health`. Agents call `/api/products/<slug>/*`. Details: [TINYBOT.md](../TINYBOT.md).
 
 Set these in `.env` or in the environment. `docker-compose.yml` publishes on them and
 `scripts/start.sh` reads the same names to decide where to look, so one setting moves a service and

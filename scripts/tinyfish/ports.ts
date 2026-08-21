@@ -92,6 +92,9 @@ export function isLikelyUiService(
   product: TinyFishProduct,
 ): boolean {
   const lower = serviceName.toLowerCase();
+  if (lower === product.composeService.toLowerCase()) {
+    return true;
+  }
   if (
     lower === product.slug ||
     lower === product.title.toLowerCase() ||
@@ -125,10 +128,15 @@ export function remapComposeServices(
   product: TinyFishProduct,
 ): Record<string, ComposeService> {
   const entries = Object.entries(services);
+  const named = entries.find(
+    ([name]) => name.toLowerCase() === product.composeService.toLowerCase(),
+  )?.[0];
   const uiName =
+    named ??
     entries.find(([name, service]) =>
       isLikelyUiService(name, service.ports, product),
-    )?.[0] ?? entries[0]?.[0];
+    )?.[0] ??
+    entries[0]?.[0];
 
   const next: Record<string, ComposeService> = {};
   for (const [name, service] of entries) {

@@ -20,6 +20,7 @@ export type TinyFishAuthService = {
     token: string,
   ) => Promise<{ profile: TinyFishProfile; cookie: string }>;
   actorFromHeaders: (headers: Headers) => Promise<AuthenticatedActor | null>;
+  credentialFor: (userId: string) => Promise<string | undefined>;
   writeSessionCookie: (context: Context, cookie: string) => void;
   signOut: (context: Context) => Promise<void>;
 };
@@ -86,6 +87,7 @@ export function createTinyFishAuthService(options: {
         ...(sprite ? { sprite } : {}),
       };
     },
+    credentialFor: (userId) => options.profiles.credentialFor(userId),
     writeSessionCookie: (context, cookie) => {
       setCookie(context, TINYFISH_SESSION_COOKIE, cookie, {
         httpOnly: true,

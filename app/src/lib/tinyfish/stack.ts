@@ -19,6 +19,8 @@ export type TinyFishProduct = {
   title: string;
   oneLiner: string;
   repo: string;
+  /** Service name in that product's own compose. Wrap this one, not webhook/postgres. */
+  composeService: string;
   /** Host port TinyBot publishes and the start-page card opens. */
   hostPort: number;
   /**
@@ -27,6 +29,8 @@ export type TinyFishProduct = {
    */
   nativePort: number;
   path: string;
+  /** Shared contract: GET /health → 200 {ok, product, usage_id}. */
+  healthPath: "/health";
   /** Lower starts first. TinyPipe is 0 so the auth socket is up before siblings. */
   startOrder: number;
   hostPortEnv: string;
@@ -54,9 +58,11 @@ export const TINYFISH_PRODUCTS: readonly TinyFishProduct[] = [
     title: "TinyTail",
     oneLiner: "As-of Explorer — long-tail facts, read-only",
     repo: "mariodelgado/js-01-long-tail-dataset",
+    composeService: "ltdf",
     hostPort: 18765,
     nativePort: 8765,
     path: "/ui",
+    healthPath: "/health",
     startOrder: 1,
     hostPortEnv: "TINYTAIL_HOST_PORT",
     nativePortEnv: "TINYTAIL_PORT",
@@ -67,9 +73,11 @@ export const TINYFISH_PRODUCTS: readonly TinyFishProduct[] = [
     title: "TinyPulse",
     oneLiner: "Event Feed — NE Asia LNG, graph is read-only",
     repo: "mariodelgado/js-02-physical-events",
+    composeService: "feed",
     hostPort: 18082,
     nativePort: 8080,
     path: "/ui",
+    healthPath: "/health",
     startOrder: 2,
     hostPortEnv: "TINYPULSE_HOST_PORT",
     nativePortEnv: "TINYPULSE_PORT",
@@ -80,9 +88,11 @@ export const TINYFISH_PRODUCTS: readonly TinyFishProduct[] = [
     title: "TinyWeb",
     oneLiner: "Governed Fetch — deny-list still wins",
     repo: "mariodelgado/js-03-governed-web",
+    composeService: "tinyfish-web",
     hostPort: 18766,
     nativePort: 8765,
     path: "/ui",
+    healthPath: "/health",
     startOrder: 3,
     hostPortEnv: "TINYWEB_HOST_PORT",
     nativePortEnv: "TINYWEB_PORT",
@@ -93,9 +103,11 @@ export const TINYFISH_PRODUCTS: readonly TinyFishProduct[] = [
     title: "TinyWatch",
     oneLiner: "Watch / When / Do — T1 required",
     repo: "mariodelgado/tf-01-trigger-rules",
+    composeService: "engine",
     hostPort: 18081,
     nativePort: 8080,
     path: "/",
+    healthPath: "/health",
     startOrder: 4,
     hostPortEnv: "TINYWATCH_HOST_PORT",
     nativePortEnv: "TINYWATCH_PORT",
@@ -106,9 +118,11 @@ export const TINYFISH_PRODUCTS: readonly TinyFishProduct[] = [
     title: "TinyKit",
     oneLiner: "Recipe Gallery — failed evals cannot instantiate",
     repo: "mariodelgado/tf-02-recipe-gallery",
+    composeService: "gallery",
     hostPort: 18083,
     nativePort: 8080,
     path: "/",
+    healthPath: "/health",
     startOrder: 5,
     hostPortEnv: "TINYKIT_HOST_PORT",
     nativePortEnv: "TINYKIT_PORT",
@@ -119,9 +133,11 @@ export const TINYFISH_PRODUCTS: readonly TinyFishProduct[] = [
     title: "TinyPipe",
     oneLiner: "Auth + usage console — fixture CIMD, credit pool",
     repo: "mariodelgado/tf-03-mcp-distribution",
+    composeService: "tinyfish-web",
     hostPort: 3712,
     nativePort: 3712,
     path: "/ui",
+    healthPath: "/health",
     startOrder: 0,
     hostPortEnv: "TINYPIPE_HOST_PORT",
     nativePortEnv: "TINYPIPE_PORT",
@@ -133,6 +149,15 @@ export function tinyFishProductUrl(product: {
   path: string;
 }): string {
   const path = product.path.startsWith("/") ? product.path : `/${product.path}`;
+  return `http://127.0.0.1:${product.hostPort}${path}`;
+}
+
+/** GET /health on the remapped host port — the consume-path probe, not the UI. */
+export function tinyFishProductHealthUrl(product: {
+  hostPort: number;
+  healthPath?: string;
+}): string {
+  const path = product.healthPath ?? "/health";
   return `http://127.0.0.1:${product.hostPort}${path}`;
 }
 

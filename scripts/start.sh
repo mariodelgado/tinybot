@@ -212,14 +212,14 @@ $(green "Ready. http://localhost:$APP_PORT")
 Sign in first:             http://localhost:$APP_PORT/sign
   TinyPipe must be healthy. Paste tfk.alice (creates tfu_alice).
 
-TinyFish cards (after sign-in):
+TinyFish cards iframe the UI; agents call /api/products/<slug>/* (TinyPipe first):
 
-  - TinyPipe:              http://127.0.0.1:3712/ui
-  - TinyTail:              http://127.0.0.1:18765/ui
-  - TinyPulse:             http://127.0.0.1:18082/ui
-  - TinyWeb:               http://127.0.0.1:18766/ui
-  - TinyWatch:             http://127.0.0.1:18081/
-  - TinyKit:               http://127.0.0.1:18083/
+  - TinyPipe:              http://127.0.0.1:3712/ui   POST /api/products/tinypipe/mcp
+  - TinyTail:              http://127.0.0.1:18765/ui  GET  /api/products/tinytail/v1/as-of
+  - TinyPulse:             http://127.0.0.1:18082/ui  /api/products/tinypulse/…
+  - TinyWeb:               http://127.0.0.1:18766/ui  /api/products/tinyweb/…
+  - TinyWatch:             http://127.0.0.1:18081/    /api/products/tinywatch/…
+  - TinyKit:               http://127.0.0.1:18083/    /api/products/tinykit/…
 
 Next steps:
 

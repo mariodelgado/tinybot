@@ -10,10 +10,15 @@
 # the private repos. Include-into-the-TinyBot-project was not used: sibling service
 # names such as postgres would collide with TinyBot and with each other.
 #
-# Exception: this Cloud Agent could not read the six private repos (GitHub 404),
-# so native compose files were not inspected. Native container ports follow each
-# product's previously documented bind (TinyPipe 3712, TinyTail/TinyWeb 8765,
-# others 8080). No product repo was edited.
+# Native ports and compose service names (verified on the product PRs; source
+# is not vendored). Wrap these services, not webhook/postgres:
+#   tinypipe  tinyfish-web  3712
+#   tinytail  ltdf          8765
+#   tinypulse feed          8080  (8081/8090 stay unpublished)
+#   tinyweb   tinyfish-web  8765
+#   tinywatch engine        8080  (webhook 8081 stays unpublished)
+#   tinykit   gallery       8080
+# Each product honors PORT and GET /health → 200 {ok, product, usage_id}.
 #
 # TinyPipe is the auth socket. Start it first. TinyBot sign-in uses
 # TINYFISH_MCP_URL=http://127.0.0.1:3712/mcp and the fixture issuer.
