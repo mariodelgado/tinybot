@@ -25,7 +25,7 @@ Regenerate it with `bun run diagram` after changing anything it shows.
 | TinyTail / TinyWeb / TinyKit | 18765 / 18766 / 18083 | Platform-capability primitives (`kind: "platform"`). Start-page cards and empty-state agents after TinyPipe (which follows TinyPrior). |
 | TinyPing + 10 board products | 18101, 18081, 18102–18105, 18082, 18106–18109 | Board primitives on the start page and empty-state roster (TinyPing first). Cards iframe the UI; agents use `/api/products/<slug>/*`. |
 
-`scripts/start.sh` starts TinyPipe first, then the other TinyFish products (`docker-compose.tinyfish.yml` for buildable slugs, or a wrap of each product's latest compose), then PostgreSQL, `agent-computer`, `agent-bot`, `agent-langgraph`, and the supervisor through Docker Compose, then starts `server` and `app` on the host. Product source is fetched as a linked service (sibling or `.tinyfish-siblings/`), never vendored. README-only board repos are not a start failure.
+`scripts/start.sh` starts TinyPipe first, then the other TinyFish products (`docker-compose.tinyfish.yml` lists all 15 as git-context fallback, or a wrap of each product's latest compose), then PostgreSQL, `agent-computer`, `agent-bot`, `agent-langgraph`, and the supervisor through Docker Compose, then starts `server` and `app` on the host. Product source is fetched as a linked service (sibling or `.tinyfish-siblings/`), never vendored. README-only board repos are not a start failure.
 
 Without a Sprite, TinyBot consumes each product at `/api/products/<slug>/*` → `127.0.0.1:<hostPort>` or `TINYFISH_<SLUG>_URL` / `VITE_TINYFISH_<USAGE>_URL` (Fly) with the signed-in TinyFish Bearer. Sprite path stays `/api/sprite/apps/<slug>/*`. See [TINYBOT.md](../TINYBOT.md).
 

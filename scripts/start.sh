@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
 # Start TinyBot and the TinyFish products, then verify each service answers.
-# TinyPipe comes up first (auth socket on :3712). Board cards are the 11 products
-# (TinyPing first). Platform backends still start and proxy. Safe to rerun:
-# matching services are left running, and unrelated port holders are reported.
+# TinyPipe comes up first (auth socket on :3712). Overlay compose knows all 15
+# TinyX products. Safe to rerun: matching services are left running, and
+# unrelated port holders are reported.
 
 set -euo pipefail
 

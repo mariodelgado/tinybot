@@ -121,7 +121,7 @@ export function uiPublishBinding(product: TinyFishProduct): string {
 
 /**
  * Keep one loopback publish for the mini-app; drop other host publishes so sibling
- * Postgres / 8080 / 8765 cannot collide with TinyBot or the other five products.
+ * Postgres / 8080 / 8765 cannot collide with TinyBot or the other products.
  */
 export function remapComposeServices(
   services: Record<string, ComposeService>,

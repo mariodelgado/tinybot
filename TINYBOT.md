@@ -2,9 +2,9 @@
 
 TinyBot is the desktop shell, not a twelfth usage product. The Tiny* repos stay independent apps — **linked service dependencies**, not imported packages. TinyBot iframes board UIs and calls product backends. Do not vendor, submodule, or npm/pip-install those trees into this repo.
 
-`scripts/tinyfish/start-products.ts` takes **latest** product code on each restart: wrap each product's own compose after a sibling checkout or a clone/fetch into gitignored `.tinyfish-siblings/`. The default branch is used when it has `TINYBOT.md`; otherwise the open consume-contract PR branch. Fallback is a git-context build from GitHub (`docker-compose.tinyfish.yml`) when that overlay lists the slug. Product files are never copied into TinyBot.
+`scripts/tinyfish/start-products.ts` takes **latest** product code on each restart: wrap each product's own compose after a sibling checkout or a clone/fetch into gitignored `.tinyfish-siblings/`. The default branch is used when it has `TINYBOT.md`; otherwise the open consume-contract PR branch. Fallback is a git-context build from GitHub (`docker-compose.tinyfish.yml`), which lists all 15 products. Product files are never copied into TinyBot.
 
-New board repos may still be README-only. Cards may show Unreachable. Do not fail start when a sibling has no compose yet. TinyPipe remains required locally (auth socket).
+New board repos may still be README-only. Cards may show Unreachable. Do not fail start when a sibling has no compose or Dockerfile yet. TinyPipe remains required locally (auth socket).
 
 ## Board (start-page cards + empty-state agents)
 
@@ -45,7 +45,7 @@ Each product honors `PORT` and answers `GET /health` with `{ok, product, usage_i
 
 `bash scripts/start.sh` starts TinyPipe first (`http://127.0.0.1:3712/mcp`, fixture issuer `https://issuer.fixtures.tinyfish.test`), then the other products, then TinyBot.
 
-Preferred bring-up wraps each product's own compose (sibling checkout or a gitignored `.tinyfish-siblings/` clone of the latest ref) and remaps only the named compose service onto `127.0.0.1:<hostPort>:<nativePort>`. `docker-compose.tinyfish.yml` is the git-context fallback for products that already have a buildable tree. Do not vendor product repos into this checkout.
+Preferred bring-up wraps each product's own compose (sibling checkout or a gitignored `.tinyfish-siblings/` clone of the latest ref) and remaps only the named compose service onto `127.0.0.1:<hostPort>:<nativePort>`. `docker-compose.tinyfish.yml` is the git-context fallback for all 15 products. Do not vendor product repos into this checkout.
 
 Sign-in accepts a TinyFish API key (`tf_…` from [agent.tinyfish.ai/api-keys](https://agent.tinyfish.ai/api-keys)) or an OAuth MCP token for `https://agent.tinyfish.ai/mcp`, presented as `X-API-Key` or `Authorization: Bearer`. That header is forwarded unchanged to TinyPipe and to product backends. TinyBot does not log the secret.
 
@@ -74,6 +74,20 @@ When `TINYFISH_<SLUG>_URL` or `VITE_TINYFISH_<USAGE>_URL` is set, cards and `/ap
 | tinyprior | `TINYFISH_TINYPRIOR_URL` / `VITE_TINYFISH_TINY_PRIOR_URL` | tf-tinyprior | https://tf-tinyprior.fly.dev |
 
 TinyPipe MCP on Fly: `TINYFISH_MCP_URL=https://tf-tinypipe.fly.dev/mcp` or `http://tf-tinypipe.internal:8080/mcp`. These machines are one each in `sjc` (`--ha=false`). They may not be live yet; do not treat an unreachable Fly URL as a TinyBot failure.
+
+Nine board apps are not deployed on Fly yet. Set `TINYFISH_<SLUG>_URL` when a machine exists; unset keeps the localhost remap. A missing or down Fly URL must not fail TinyBot (cards show Unreachable):
+
+| slug | env |
+| --- | --- |
+| tinyping | `TINYFISH_TINYPING_URL` |
+| tinyreg | `TINYFISH_TINYREG_URL` |
+| tinyscout | `TINYFISH_TINYSCOUT_URL` |
+| tinybrief | `TINYFISH_TINYBRIEF_URL` |
+| tinydeed | `TINYFISH_TINYDEED_URL` |
+| tinyfoundry | `TINYFISH_TINYFOUNDRY_URL` |
+| tinymargin | `TINYFISH_TINYMARGIN_URL` |
+| tinyatlas | `TINYFISH_TINYATLAS_URL` |
+| tinyprior | `TINYFISH_TINYPRIOR_URL` |
 
 ## Consume path (no Sprite)
 

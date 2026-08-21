@@ -88,7 +88,7 @@ A non-OpenRouter gateway is still the existing path: leave `OPENROUTER_API_KEY` 
 | `INITIAL_ADMIN_EMAILS`       | Comma-separated users seeded as administrators.                                        |
 | `TINYFISH_MCP_URL`           | TinyPipe MCP URL. When set, TinyFish is the sign-in path. `start.sh` writes `http://127.0.0.1:3712/mcp`. Fly: `https://tf-tinypipe.fly.dev/mcp` or `http://tf-tinypipe.internal:8080/mcp`. |
 | `TINYFISH_ISSUER`            | Expected CIMD `iss`. Fixture: `https://issuer.fixtures.tinyfish.test`.                 |
-| `TINYFISH_<SLUG>_URL` / `VITE_TINYFISH_<USAGE>_URL` | Optional product origin (Fly). Cards and `/api/products/:slug/*` use it instead of localhost remap. Unset keeps `start.sh` local. |
+| `TINYFISH_<SLUG>_URL` / `VITE_TINYFISH_<USAGE>_URL` | Optional product origin (Fly). Cards and `/api/products/:slug/*` use it instead of localhost remap. Unset keeps `start.sh` local. Nine board apps are not deployed yet — `TINYFISH_TINYPING_URL`, `TINYFISH_TINYREG_URL`, `TINYFISH_TINYSCOUT_URL`, `TINYFISH_TINYBRIEF_URL`, `TINYFISH_TINYDEED_URL`, `TINYFISH_TINYFOUNDRY_URL`, `TINYFISH_TINYMARGIN_URL`, `TINYFISH_TINYATLAS_URL`, `TINYFISH_TINYPRIOR_URL`. |
 | `SPRITES_TOKEN` / `SPRITE_TOKEN` | Fly Sprites org token. When set, first TinyFish sign-in creates or reuses one Sprite per user. Unset keeps localhost compose. |
 | `SPRITES_API_URL`            | Sprites API base. Default `https://api.sprites.dev/v1`. Do not set in CI.              |
 
@@ -180,7 +180,7 @@ When optional SPIRE services are used:
 | TinyAtlas         | 18108                      | `TINYATLAS_HOST_PORT` |
 | TinyPrior         | 18109                      | `TINYPRIOR_HOST_PORT` |
 
-TinyFish product ports are published by wrapping the named compose service or by `docker-compose.tinyfish.yml` when that overlay lists the slug. Native container ports stay 3712 / 8765 / 8080; only the host side is remapped. Extra publishes (TinyFeed 8081/8090, TinyTrigger webhook) stay unpublished. Cards and start wait on `GET /health`. Agents call `/api/products/<slug>/*`. Details: [TINYBOT.md](../TINYBOT.md).
+TinyFish product ports are published by wrapping the named compose service or by `docker-compose.tinyfish.yml` (all 15 products). Native container ports stay 3712 / 8765 / 8080; only the host side is remapped. Extra publishes (TinyFeed 8081/8090, TinyTrigger webhook) stay unpublished. Cards and start wait on `GET /health`. Agents call `/api/products/<slug>/*`. Details: [TINYBOT.md](../TINYBOT.md).
 
 Set these in `.env` or in the environment. `docker-compose.yml` publishes on them and
 `scripts/start.sh` reads the same names to decide where to look, so one setting moves a service and
