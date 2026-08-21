@@ -1,16 +1,32 @@
+# One channel per TinyFish product. Package-provided, public, and open to all.
 channels:
-  - id: general-assistant
-    name: General Assistant
-    description: Ask for help with everyday work.
-    permitted_agents: [general-assistant]
+  - id: tinypipe
+    name: TinyPipe
+    description: Auth + usage. TinyFish MCP auth and credit-pool metering.
+    permitted_agents: [tinypipe]
     allowed_groups: [all]
-  - id: risk-and-compliance
-    name: Risk & Compliance
-    description: Investigate policies, transaction monitoring, and control evidence.
-    permitted_agents: [knowledge, risk-analyst]
-    allowed_groups: [risk, compliance]
-  - id: company-knowledge
-    name: Company Knowledge
-    description: Find authorized answers from company documents.
-    permitted_agents: [knowledge]
+  - id: tinytail
+    name: TinyTail
+    description: As-of Explorer. Long-tail facts; read-only.
+    permitted_agents: [tinytail]
+    allowed_groups: [all]
+  - id: tinypulse
+    name: TinyPulse
+    description: Event Feed. NE Asia LNG physical events; graph is read-only.
+    permitted_agents: [tinypulse]
+    allowed_groups: [all]
+  - id: tinyweb
+    name: TinyWeb
+    description: Governed Fetch. Deny-list still wins.
+    permitted_agents: [tinyweb]
+    allowed_groups: [all]
+  - id: tinywatch
+    name: TinyWatch
+    description: Watch / When / Do. T1 required.
+    permitted_agents: [tinywatch]
+    allowed_groups: [all]
+  - id: tinykit
+    name: TinyKit
+    description: Recipe Gallery. Failed evals cannot instantiate.
+    permitted_agents: [tinykit]
     allowed_groups: [all]

@@ -33,7 +33,7 @@ your own machine.
 
 TinyBot is the TinyFish desktop shell: six local product UIs on the start page, plus the OpenBot coworker platform underneath. Docker Compose brings up every part of it, the data sits in your PostgreSQL, and chat goes through OpenRouter: Ox Alpha (`stealth/ox-alpha`) by default, with one retry on Grok 4.6 (`x-ai/grok-4.6`) if that call fails. The key is `OPENROUTER_API_KEY`, encrypted at rest when stored, and never logged.
 
-Three coworkers ship in the example package, and they are configuration rather than code: **General Assistant** for everyday work, **Knowledge** for company questions, **Risk Analyst** for risk and compliance. Add your own by editing `agents.yaml` or from `/agents` in the UI.
+Six TinyFish products ship as the package-provided default agents: **TinyPipe**, **TinyTail**, **TinyPulse**, **TinyWeb**, **TinyWatch**, and **TinyKit**. They are configuration rather than code, public and ownerless, and show up on a fresh roster. Add your own by editing `agents.yaml` or from `/agents` in the UI.
 
 Anything a Bot does to a computer, a file, an MCP server or a component goes through one gateway that decides and records it. That is the difference between an agent that can use your tools and an agent you can let near them.
 

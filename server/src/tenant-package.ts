@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, notInArray } from "drizzle-orm";
 import { parse } from "yaml";
 import type { Database } from "./db/client";
 import {
@@ -505,6 +505,29 @@ export async function synchronizeTenantPackage(
         );
       }
     }
+
+    const keepAgentIds = tenantPackage.agents.map((agent) => agent.id);
+    const keepChannelIds = tenantPackage.channels.map((channel) => channel.id);
+    await transaction
+      .delete(channelTable)
+      .where(
+        keepChannelIds.length
+          ? and(
+              eq(channelTable.packageId, deploymentPackage.id),
+              notInArray(channelTable.id, keepChannelIds),
+            )
+          : eq(channelTable.packageId, deploymentPackage.id),
+      );
+    await transaction
+      .delete(agentTable)
+      .where(
+        keepAgentIds.length
+          ? and(
+              eq(agentTable.packageId, deploymentPackage.id),
+              notInArray(agentTable.id, keepAgentIds),
+            )
+          : eq(agentTable.packageId, deploymentPackage.id),
+      );
 
     return deploymentPackage;
   });

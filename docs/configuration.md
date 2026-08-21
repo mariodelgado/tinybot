@@ -220,21 +220,16 @@ Theme CSS may define only `:root` and `.dark` blocks, approved theme variables, 
 
 ```yaml
 agents:
-  - id: knowledge
-    name: Knowledge
-    title: Company Knowledge
-    role_description: Answer company knowledge questions and cite sources.
-    avatar_seed: knowledge
+  - id: tinypipe
+    name: TinyPipe
+    title: Auth + usage
+    role_description: Usage tf-03. TinyFish MCP auth and credit-pool metering. Fixture CIMD only. Tokens are opaque tfk.*. Do not invent a production issuer or JWKS.
+    avatar_seed: tinypipe
     type: built-in
-    system_prompt: Answer from authorized company knowledge and cite every source.
-
-  - id: risk-analyst
-    name: Risk Analyst
-    title: Risk & Compliance
-    role_description: Investigate policies and controls.
-    type: remote-ag-ui
-    endpoint: ${MANAGED_AGENT_AG_UI_URL}
+    system_prompt: You are TinyPipe, Auth + usage (tf-03). TinyFish MCP auth and credit-pool metering. Fixture CIMD only. Tokens are opaque tfk.*. Do not invent a production issuer or JWKS.
 ```
+
+TinyBot's shipped package seeds all six TinyFish products as `built-in` agents (`tinypipe`, `tinytail`, `tinypulse`, `tinyweb`, `tinywatch`, `tinykit`). Do not invent AG-UI endpoints for those product UIs.
 
 Each agent requires `id`, `name`, `title`, `role_description`, and `type`.
 
@@ -253,12 +248,14 @@ message saying which file wanted it, rather than leaving a Bot pointed at an add
 
 ```yaml
 channels:
-  - id: risk-and-compliance
-    name: Risk & Compliance
-    description: Investigate policies and controls.
-    permitted_agents: [knowledge, risk-analyst]
-    allowed_groups: [risk, compliance]
+  - id: tinypipe
+    name: TinyPipe
+    description: Auth + usage. TinyFish MCP auth and credit-pool metering.
+    permitted_agents: [tinypipe]
+    allowed_groups: [all]
 ```
+
+TinyBot's shipped package has one channel per product, each permitting only that product's agent.
 
 Each channel requires `id`, `name`, `description`, `permitted_agents`, and `allowed_groups`. Every `permitted_agents` entry must match an agent id.
 

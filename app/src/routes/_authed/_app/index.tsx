@@ -9,6 +9,10 @@ import { agentListQueryOptions } from "@/lib/agents/queries";
 import { currentUserQueryOptions } from "@/lib/auth/queries";
 import { useStartChannel } from "@/lib/channels/start";
 import { appConfig } from "@/lib/generated/application-config";
+import {
+  composerFallbackAgent,
+  exploreTinyFishAgents,
+} from "@/lib/tinyfish/agents";
 import { TINYFISH_APPS } from "@/lib/tinyfish/apps";
 
 export const Route = createFileRoute("/_authed/_app/")({
@@ -18,12 +22,12 @@ export const Route = createFileRoute("/_authed/_app/")({
 function RouteComponent() {
   const { data: agents } = useQuery(agentListQueryOptions());
   const { data: currentUser } = useQuery(currentUserQueryOptions());
-  const explore = agents?.filter((a) => !a.mine && a.visibility === "public");
+  const explore = exploreTinyFishAgents(agents);
   const { start, pending } = useStartChannel();
   const [error, setError] = useState<string | null>(null);
 
-  /** Default recipient when the composer draft has no mention. */
-  const fallback = explore?.[0] ?? agents?.[0];
+  /** TinyPipe first, then the other TinyFish products in start order. */
+  const fallback = composerFallbackAgent(agents);
 
   return (
     <div className="flex-1 overflow-y-auto w-full">

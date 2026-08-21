@@ -10,6 +10,7 @@ import { DetailPanel } from "@/components/layout/detail-panel";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { agentListQueryOptions } from "@/lib/agents/queries";
+import { exploreTinyFishAgents } from "@/lib/tinyfish/agents";
 
 /**
  * Creating and inspecting a coworker are search-parameter states so the roster remains mounted and
@@ -30,7 +31,7 @@ function AgentsScreen() {
   const navigate = Route.useNavigate();
   const { data: agents } = useQuery(agentListQueryOptions());
   const mine = agents?.filter((a) => a.mine);
-  const explore = agents?.filter((a) => !a.mine && a.visibility === "public");
+  const explore = exploreTinyFishAgents(agents);
 
   // Creating wins if both are somehow set: it is the more recent intent.
   const showCreate = isCreating === true;

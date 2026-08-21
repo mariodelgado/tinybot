@@ -243,26 +243,48 @@ describe("tenant YAML validation", () => {
     expect(tenantPackage.stylesheet).toBeNull();
     expect(tenantPackage.themeCss).toBe("");
     expect(tenantPackage.checksum).toMatch(/^[a-f0-9]{64}$/);
+    expect(tenantPackage.agents.map((agent) => agent.id)).toEqual([
+      "tinypipe",
+      "tinytail",
+      "tinypulse",
+      "tinyweb",
+      "tinywatch",
+      "tinykit",
+    ]);
+    expect(
+      tenantPackage.agents.some((agent) =>
+        ["general-assistant", "knowledge", "risk-analyst"].includes(agent.id),
+      ),
+    ).toBe(false);
     expect(tenantPackage.agents).toContainEqual({
-      id: "general-assistant",
-      name: "General Assistant",
-      title: "Everyday Work",
+      id: "tinypipe",
+      name: "TinyPipe",
+      title: "Auth + usage",
       roleDescription:
-        "Help with everyday work using clear, concise, and accurate answers.",
-      avatarSeed: "general-assistant",
+        "Usage tf-03. TinyFish MCP auth and credit-pool metering. Fixture CIMD only. Tokens are opaque tfk.*. Do not invent a production issuer or JWKS.",
+      avatarSeed: "tinypipe",
       type: "built_in",
       configuration: {
         systemPrompt:
-          "You are a helpful general assistant. Give clear, concise, and accurate answers.",
+          "You are TinyPipe, Auth + usage (tf-03). TinyFish MCP auth and credit-pool metering. Fixture CIMD only. Tokens are opaque tfk.*. Do not invent a production issuer or JWKS.",
       },
     });
     expect(tenantPackage.channels).toContainEqual({
-      id: "general-assistant",
-      name: "General Assistant",
-      description: "Ask for help with everyday work.",
-      permittedAgents: ["general-assistant"],
+      id: "tinypipe",
+      name: "TinyPipe",
+      description: "Auth + usage. TinyFish MCP auth and credit-pool metering.",
+      permittedAgents: ["tinypipe"],
       allowedGroups: ["all"],
     });
+    expect(tenantPackage.channels).toHaveLength(6);
+    expect(
+      tenantPackage.channels.every(
+        (channel) =>
+          channel.permittedAgents.length === 1 &&
+          channel.permittedAgents[0] === channel.id &&
+          channel.allowedGroups.includes("all"),
+      ),
+    ).toBe(true);
   });
 
   test("accepts the complete fintech package and normalizes agent types", () => {
@@ -331,6 +353,35 @@ describe("tenant package agent profile synchronization", () => {
       visibility: "public",
       deletedAt: null,
     });
+  });
+
+  test("drops leftover OpenBot sample agents when the package no longer lists them", async () => {
+    const leftover = packageAgent({
+      id: "general-assistant",
+      name: "General Assistant",
+    });
+    const first = loadedPackage(leftover);
+    const firstPackage = await synchronizeTenantPackage(database, first);
+    createdPackageIds.push(firstPackage.id);
+
+    const tinypipe = packageAgent({
+      id: "tinypipe",
+      name: "TinyPipe",
+      title: "Auth + usage",
+    });
+    const next = {
+      ...first,
+      checksum: randomUUID(),
+      agents: [tinypipe],
+    };
+    await synchronizeTenantPackage(database, next);
+    createdAgentIds.push(tinypipe.id);
+
+    const remaining = await database
+      .select({ id: agents.id })
+      .from(agents)
+      .where(eq(agents.packageId, firstPackage.id));
+    expect(remaining.map((row) => row.id)).toEqual(["tinypipe"]);
   });
 
   test("resynchronizes and undeletes an existing package profile", async () => {
