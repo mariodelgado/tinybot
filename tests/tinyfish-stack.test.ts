@@ -12,6 +12,7 @@ import {
   TINYFISH_FIXTURE_ISSUER,
   TINYFISH_PRODUCTS,
   TINYPIPE_MCP_URL,
+  tinyFishProductBySlug,
   tinyFishProductHealthUrl,
   tinyFishProductUrl,
 } from "../app/src/lib/tinyfish/stack";
