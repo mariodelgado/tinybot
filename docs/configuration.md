@@ -19,7 +19,7 @@ bash scripts/start.sh
 | Variable                      | Meaning                                                                                               |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------- |
 | `DATABASE_URL`                | PostgreSQL connection string.                                                                         |
-| `KEY_ENCRYPTION_KEY`          | Base64-encoded 32-byte key for encrypted stored credentials. Generate with `openssl rand -base64 32`. |
+| `KEY_ENCRYPTION_KEY`          | Base64-encoded 32-byte key for encrypted stored credentials and TinyFish `accounts.access_token` values. Generate with `openssl rand -base64 32`. |
 | `MANAGED_AGENT_AG_UI_URL`     | Default AG-UI endpoint for coworkers created in the product. Must be HTTP(S).                         |
 | `INTELLIGENCE_API_URL`        | CopilotKit Intelligence API URL.                                                                      |
 | `INTELLIGENCE_GATEWAY_WS_URL` | CopilotKit Intelligence realtime gateway URL.                                                         |

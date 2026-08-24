@@ -1,7 +1,9 @@
 import { and, eq } from "drizzle-orm";
+import { encryptSecret } from "../../credentials";
 import type { Database } from "../../db/client";
 import { accounts, userRoles, users } from "../../db/schema";
 import type { SpriteAssignment } from "../../sprites/store";
+import { revealStoredAccessToken } from "./access-token";
 import { TINYFISH_PROVIDER_ID, type TinyFishClaims } from "./claims";
 import {
   classifyTinyFishCredential,
@@ -71,6 +73,24 @@ function headerFromStored(
     : defaultHeaderForToken(value);
 }
 
+async function revealAccessToken(
+  database: Database,
+  encryptionKey: string,
+  row: { id: string; accessToken: string | null } | undefined,
+): Promise<string | undefined> {
+  const stored = row?.accessToken;
+  if (!row || !stored) return undefined;
+  return revealStoredAccessToken(encryptionKey, stored, async (ciphertext) => {
+    await database
+      .update(accounts)
+      .set({
+        accessToken: ciphertext,
+        updatedAt: new Date(),
+      })
+      .where(eq(accounts.id, row.id));
+  });
+}
+
 export function createMemoryTinyFishProfileStore(): TinyFishProfileStore {
   const rows = new Map<string, TinyFishProfile>();
   const credentials = new Map<string, TinyFishPresentedCredential>();
@@ -98,11 +118,16 @@ export function createMemoryTinyFishProfileStore(): TinyFishProfileStore {
 
 export function createDatabaseTinyFishProfileStore(
   database: Database,
+  encryptionKey: string,
 ): TinyFishProfileStore {
   return {
     upsert: async (claims, credential) => {
       const profile = profileFromClaims(claims);
       const now = new Date();
+      const presented = storedPresentation(credential);
+      const encryptedAccessToken = presented
+        ? await encryptSecret(encryptionKey, presented.value)
+        : undefined;
 
       await database.transaction(async (transaction) => {
         const existingAccount = await transaction
@@ -119,8 +144,6 @@ export function createDatabaseTinyFishProfileStore(
           )
           .limit(1);
 
-        const presented = storedPresentation(credential);
-
         if (existingAccount[0]) {
           await transaction
             .update(users)
@@ -133,7 +156,7 @@ export function createDatabaseTinyFishProfileStore(
           await transaction
             .update(accounts)
             .set({
-              accessToken: presented?.value,
+              accessToken: encryptedAccessToken,
               refreshToken: presented
                 ? headerName(presented.header)
                 : undefined,
@@ -169,7 +192,7 @@ export function createDatabaseTinyFishProfileStore(
             accountId: profile.tinyfishUserId,
             providerId: TINYFISH_PROVIDER_ID,
             userId: profile.id,
-            accessToken: presented?.value,
+            accessToken: encryptedAccessToken,
             refreshToken: presented ? headerName(presented.header) : undefined,
             idToken: profile.iss,
             scope: profile.clientId,
@@ -177,7 +200,7 @@ export function createDatabaseTinyFishProfileStore(
           .onConflictDoUpdate({
             target: [accounts.providerId, accounts.accountId],
             set: {
-              accessToken: presented?.value,
+              accessToken: encryptedAccessToken,
               refreshToken: presented
                 ? headerName(presented.header)
                 : undefined,
@@ -228,7 +251,10 @@ export function createDatabaseTinyFishProfileStore(
     },
     credentialFor: async (userId) => {
       const rows = await database
-        .select({ accessToken: accounts.accessToken })
+        .select({
+          id: accounts.id,
+          accessToken: accounts.accessToken,
+        })
         .from(accounts)
         .where(
           and(
@@ -237,11 +263,12 @@ export function createDatabaseTinyFishProfileStore(
           ),
         )
         .limit(1);
-      return rows[0]?.accessToken ?? undefined;
+      return revealAccessToken(database, encryptionKey, rows[0]);
     },
     credentialPresentationFor: async (userId) => {
       const rows = await database
         .select({
+          id: accounts.id,
           accessToken: accounts.accessToken,
           refreshToken: accounts.refreshToken,
         })
@@ -253,7 +280,7 @@ export function createDatabaseTinyFishProfileStore(
           ),
         )
         .limit(1);
-      const value = rows[0]?.accessToken;
+      const value = await revealAccessToken(database, encryptionKey, rows[0]);
       if (!value) return undefined;
       const kind = classifyTinyFishCredential(value) ?? "mcp_token";
       return {

@@ -154,7 +154,7 @@ Connector credentials are stored through the credential vault and referenced by 
 - Server routes enforce auth and roles; admin pages are backed by server-side administrator checks.
 - `OPENBOT_DEV_NO_AUTH=true` is local-only and is refused with `NODE_ENV=production`.
 - `KEY_ENCRYPTION_KEY` must be a base64-encoded 32-byte value. The example key is refused with `NODE_ENV=production`.
-- Credential plaintext is encrypted at rest, never returned by APIs, and redacted from audit events.
+- Credential plaintext and TinyFish profile access tokens are encrypted at rest with `KEY_ENCRYPTION_KEY`, never returned by APIs, and redacted from audit events. Tokens are decrypted only when TinyBot forwards a key to a product backend.
 - Browser navigation allows `http` and `https`; cloud metadata addresses are refused under every configuration.
 - `AGENT_COMPUTER_ALLOW_PRIVATE_HOSTS=true` is for local development only.
 - Computer tokens and supervisor tokens must be long random values outside local development.
