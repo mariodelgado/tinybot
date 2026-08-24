@@ -93,6 +93,16 @@ function parseEnvelope(value: string): CredentialEnvelope {
   }
 }
 
+/** True when `value` is a versioned AES-GCM envelope, not leftover plaintext. */
+export function isSecretEnvelope(value: string): boolean {
+  try {
+    parseEnvelope(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function encryptSecret(encodedKey: string, plaintext: string) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ciphertext = await crypto.subtle.encrypt(

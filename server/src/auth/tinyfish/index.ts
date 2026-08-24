@@ -5,6 +5,7 @@ import { createTinyFishAuthService, type TinyFishAuthService } from "./service";
 import { createDatabaseTinyFishSessionStore } from "./sessions";
 import { createTinyFishVerifier } from "./verify";
 
+export { revealStoredAccessToken } from "./access-token";
 export {
   FIXTURE_CIMD,
   FIXTURE_ISSUER,
@@ -71,7 +72,10 @@ export function createConfiguredTinyFishAuth(options: {
       mcpUrl: options.mcpUrl,
       issuer: options.issuer,
     }),
-    profiles: createDatabaseTinyFishProfileStore(options.database),
+    profiles: createDatabaseTinyFishProfileStore(
+      options.database,
+      options.encryptionKey,
+    ),
     sessions: createDatabaseTinyFishSessionStore(
       options.database,
       options.encryptionKey,

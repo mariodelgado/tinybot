@@ -196,7 +196,7 @@ CI is fixture-only. Tests mock the Sprites HTTP API and never call `api.sprites.
 - **Governed MCP**: a curated catalogue ships for Atlassian, Box, Slack, Salesforce and ServiceNow. Custom servers must pass URL checks, and any tool not positively classified as a read is treated as a write.
 - **Skills are instructions, not capabilities**: personal skills attach only to Bots their author owns, deployment skills are admin-owned, and both are invoked with `/` in the composer.
 - **An audit trail you can read**: `/admin/audit` lists what was permitted, what was refused and what failed, and every refusal carries the rule that caused it.
-- **Credentials encrypted at rest**: stored through `/admin/credentials`, never returned by an API, and redacted from audit events.
+- **Credentials encrypted at rest**: stored through `/admin/credentials` and TinyFish profile tokens in `accounts.access_token`, never returned by an API, and redacted from audit events.
 - **Loopback by default**: computers bind to `127.0.0.1` and require a per-container token, so nothing reaches a logged-in browser by knowing its port.
 - **Durable threads and memory**: conversations survive restarts through CopilotKit Intelligence, and each deployment stamps the threads it owns.
 

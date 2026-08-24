@@ -9,13 +9,14 @@ import {
   decryptCredentialForUse,
   decryptSecret,
   encryptSecret,
+  isSecretEnvelope,
   resolveModelApiKey,
   revokeCredential,
   rotateCredential,
 } from "../src/credentials";
 import { createDatabase } from "../src/db/client";
-import { TEST_POOL } from "./support/database";
 import { credentials } from "../src/db/schema";
+import { TEST_POOL } from "./support/database";
 import { testEnvironment } from "./support/environment";
 
 const key = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
@@ -45,6 +46,9 @@ describe("credential encryption", () => {
     await expect(decryptSecret(key, envelope)).resolves.toBe(
       "openai-secret-value",
     );
+    expect(isSecretEnvelope(envelope)).toBe(true);
+    expect(isSecretEnvelope("tf_live_leftover_plaintext")).toBe(false);
+    expect(isSecretEnvelope("not-json")).toBe(false);
   });
 
   test("creates a write-only credential and audits safe metadata", async () => {
